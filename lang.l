@@ -34,6 +34,38 @@
     return TM_CHARTYPE;
 }
 
+"while" {
+    return TM_WHILE;
+}
+
+"DO" {
+    return TM_DO;
+}
+
+"IF" {
+    return TM_IF;
+}
+
+"THEN" {
+    return TM_THEN;
+}
+
+"ELSE" {
+    return TM_ELSE;
+}
+
+"FOR" {
+    return TM_FOR;
+}
+
+"LOCAL" {
+    return TM_LOCAL;
+}
+
+"IN" {
+    return TM_IN;
+}
+
 ";" {
     return TM_SEMICOL;
     }
