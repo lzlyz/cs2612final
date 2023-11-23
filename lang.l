@@ -8,21 +8,24 @@
 
 %%
 
-
-"struct" {
-    return TM_STRUCT;
+"var" {
+    return TM_VAR;
 }
 
-"union" {
-    return TM_UNION;
+"skip" {
+    return TM_SKIP;
 }
 
-"enum" {
-    return TM_ENUM;
+"continue" {
+    return TM_CONTINUE;
 }
 
-"typedef" {
-    return TM_TYPEDEF;
+"break" {
+    return TM_BREAK;
+}
+
+"return" {
+    return TM_RETURN;
 }
 
 
