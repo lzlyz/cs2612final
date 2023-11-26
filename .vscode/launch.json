@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "f:/Library/lecture0/Programming Languages and Compilers/while_db_parser",
-      "program": "f:/Library/lecture0/Programming Languages and Compilers/while_db_parser/build/Debug/outDebug",
+      "cwd": "c:/Users/ALIENWARE/Desktop/cs2612final/whiledb",
+      "program": "c:/Users/ALIENWARE/Desktop/cs2612final/whiledb/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
