@@ -98,7 +98,7 @@ NT_CMD:
   {
     $$ = (TFor($3,$5,$7,$10));
   }
-| TM_LOCAL TM_VAR TM_IN TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE
+| TM_LOCAL TM_IDENT TM_IN TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE
   {
     $$ = (TLocal($2,$5));
   }
@@ -234,7 +234,7 @@ NT_EXPR:
 NT_DECL_RIGHT_EXPR:
   TM_IDENT
   {
-	$$ = TOrigType($1);
+	$$ = TIntType($1);
   }
 | TM_MUL NT_DECL_RIGHT_EXPR
   {
@@ -288,7 +288,7 @@ NT_ANNON_RIGHT_EXPR:
   }
 | NT_ANNON_RIGHT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
   {
-    $$ = TFuncType($1 , TTNil());
+    $$ = TFuncType($1 , TDETLNil());
   }
 | NT_ANNON_RIGHT_EXPR TM_LEFT_PAREN NT_DECL_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {

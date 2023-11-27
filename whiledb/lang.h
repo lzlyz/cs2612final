@@ -129,6 +129,9 @@ struct cmd * TWhileDo(struct expr * cond, struct cmd * body);
 struct cmd * TDoWhile(struct cmd * body, struct expr * cond);
 struct cmd * TFor(struct cmd * init, struct expr * cond, struct cmd * nxt, struct cmd * body);
 struct cmd * TLocal(char * var, struct cmd * body);
+struct cmd * TBreak();
+struct cmd * TContinue();
+struct cmd * TReturn();
 struct cmd * TProc(struct expr * proc, struct expr_type_list * args);
 
 void print_binop(enum BinOpType op);

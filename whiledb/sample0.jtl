@@ -1,0 +1,4 @@
+var int a;
+a = 1;
+var int (*b)(int,int);
+a = *b(1,2)

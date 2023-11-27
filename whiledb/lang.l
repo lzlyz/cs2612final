@@ -40,28 +40,8 @@
     return TM_DO;
 }
 
-"if" {
-    return TM_IF;
-}
-
-"then" {
-    return TM_THEN;
-}
-
-"else" {
-    return TM_ELSE;
-}
-
 "for" {
     return TM_FOR;
-}
-
-"do" {
-    return TM_DO;
-}
-
-"while" {
-    return TM_WHILE;
 }
 
 "local" {
@@ -95,7 +75,7 @@
     }
 
 
-";" {
+"," {
     return TM_COMMA;
     }
 

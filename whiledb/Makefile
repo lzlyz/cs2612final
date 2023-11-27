@@ -28,7 +28,15 @@ main: lang.o parser.o lexer.o main.o
 all: main
 
 clean:
-	rm -f lexer.h lexer.c parser.h parser.c *.o main
+	rm lexer.h
+	rm lexer.c 
+	rm parser.h 
+	rm parser.c
+	rm lang.o 
+	rm lexer.o
+	rm main.o
+	rm parser.o 
+	rm main.exe
 
 %.c: %.y
 
