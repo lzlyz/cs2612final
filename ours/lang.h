@@ -47,6 +47,7 @@ enum CmdType {
   T_LOCAL,
   T_CONTINUE,
   T_BREAK,
+  T_SKIP,
   T_RETURN,
   T_PROC
 };
@@ -113,6 +114,7 @@ struct cmd {
     struct {void * none; } CONTINUE;
     struct {void * none; } BREAK;
     struct {void * none; } RETURN;
+    struct {void * none; } SKIP;
     struct {struct expr * proc; struct expr_type_list * args; } PROC;
   } d;
 };
@@ -146,6 +148,7 @@ struct cmd * TLocal(char * var, struct cmd * body);
 struct cmd * TBreak();
 struct cmd * TContinue();
 struct cmd * TReturn();
+struct cmd * TSkip();
 struct cmd * TProc(struct expr * proc, struct expr_type_list * args);
 
 void print_binop(enum BinOpType op);

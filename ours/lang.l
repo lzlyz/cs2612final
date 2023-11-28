@@ -52,6 +52,10 @@
     return TM_IN;
 }
 
+"skip" {
+    return TM_SKIP;
+}
+
 "continue" {
     return TM_CONTINUE;
 }

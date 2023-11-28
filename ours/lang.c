@@ -249,6 +249,12 @@ struct cmd * TContinue() {
   return res;
 }
 
+struct cmd * TSkip() {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_SKIP;
+  return res;
+}
+
 struct cmd * TBreak() {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_BREAK;
@@ -555,7 +561,7 @@ void print_cmd(struct cmd * c) {
     break;
   case T_LOCAL:
     printf("LOCAL(");
-    printf("%s", &c -> d.LOCAL.var);
+    printf("%s", c -> d.LOCAL.var);
     printf(",");
     print_cmd(c -> d.LOCAL.body);
     printf(")");

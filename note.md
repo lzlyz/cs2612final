@@ -1,4 +1,4 @@
-函数指针声明方式
+函数指针声明方式  
 CMD -> var int DECL_RIGHT_EXPR
 
 DECL_RIGHT_EXPR
@@ -24,7 +24,7 @@ ANNON_RIGHT_EXPR:
     -> (DECL_ARGS)
 
 
-多态声明方式：
+多态声明方式：  
 CMD -> tempalte < > var int TEMPLATE_DECL_RIGHT_EXPR
 CMD -> tempalte < > var IDENT TEMPLATE_DECL_RIGHT_EXPR
 CMD -> tempalte < TYPENAME_LIST > var int TEMPLATE_DECL_RIGHT_EXPR
@@ -60,4 +60,4 @@ TEMPLATE_ANNON_RIGHT_EXPR:
     -> (TEMPLATE_ANNON_RIGHT_EXPR)
     -> (TEMPLATE_DECL_ARGS)
 
-多态的实例化：
+多态的实例化：  

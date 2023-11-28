@@ -27,7 +27,7 @@ void * none;
 %token <none> TM_LEFT_PAREN TM_RIGHT_PAREN
 %token <none> TM_SEMICOL TM_COMMA
 %token <none> TM_VAR TM_INTTYPE TM_IF TM_THEN TM_ELSE TM_WHILE TM_DO
-%token <none> TM_FOR TM_LOCAL TM_IN TM_CONTINUE TM_BREAK TM_RETURN
+%token <none> TM_FOR TM_LOCAL TM_IN TM_CONTINUE TM_BREAK TM_RETURN TM_SKIP
 %token <none> TM_ASGNOP
 %token <none> TM_OR
 %token <none> TM_AND
@@ -51,7 +51,7 @@ void * none;
 %type <tl> NT_TYPENAME_LIST
 
 // Priority
-%nonassoc TM_ASGNOP
+%nonassoc TM_ASGNOP TM_INTTYPE TM_VAR TM_IF TM_THEN TM_ELSE TM_WHILE TM_DO TM_FOR TM_LOCAL TM_IN TM_SKIP TM_CONTINUE TM_BREAK TM_RETURN TM_TEMPLATE TM_TYPENAME  
 %left TM_OR
 %left TM_AND
 %left TM_LT TM_LE TM_GT TM_GE TM_EQ TM_NE
@@ -59,7 +59,9 @@ void * none;
 %left TM_MUL TM_DIV TM_MOD
 %right TM_UMINUS TM_DEREF TM_ADDROF
 %left TM_NOT
+%left TM_LEFT_BRACE TM_RIGHT_BRACE
 %left TM_LEFT_PAREN TM_RIGHT_PAREN
+%right TM_COMMA
 %right TM_SEMICOL
 
 %%
@@ -117,6 +119,10 @@ NT_CMD:
   {
     $$ = (TContinue());
   }
+| TM_SKIP
+  {
+    $$ = (TSkip());
+  }
 | TM_BREAK
   {
     $$ = (TBreak());
@@ -124,14 +130,6 @@ NT_CMD:
 | TM_RETURN
   {
     $$ = (TReturn());
-  }
-| NT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
-  {
-    $$ = (TProc($1,TETLNil()));
-  }
-| NT_EXPR TM_LEFT_PAREN NT_EXPR_TYPE_LIST TM_RIGHT_PAREN
-  {
-    $$ = (TProc($1,$3));
   }
 | NT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
   {
