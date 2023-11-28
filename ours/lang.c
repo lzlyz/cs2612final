@@ -23,6 +23,16 @@ struct expr_type_list * new_expr_type_list_ptr() {
   return res;
 }
 
+struct typename_list * new_typename_list_ptr() {
+  struct typename_list * res =
+    (struct typename_list *) malloc(sizeof(struct typename_list));
+  if (res == NULL) {
+    printf("Failure in malloc.\n");
+    exit(0);
+  }
+  return res;
+}
+
 struct var_decl_expr * new_var_decl_expr_ptr() {
   struct var_decl_expr * res =
     (struct var_decl_expr *) malloc(sizeof(struct var_decl_expr));
@@ -69,6 +79,17 @@ struct expr_type_list * TETLNil() {
 struct expr_type_list * TETLCons(struct expr * e, struct expr_type_list * next) {
   struct expr_type_list * res = new_expr_type_list_ptr();
   res -> e = e;
+  res -> next = next;
+  return res;
+}
+
+struct typename_list * TTLNil() {
+  return NULL;
+}
+
+struct typename_list * TTLCons(char * name, struct typename_list * next) {
+  struct typename_list * res = new_typename_list_ptr();
+  res -> name = name;
   res -> next = next;
   return res;
 }
@@ -152,6 +173,14 @@ struct cmd * TDecl(struct var_decl_expr * right) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_DECL;
   res -> d.DECL.right = right;
+  return res;
+}
+
+struct cmd * TTemplateDecl(struct typename_list * typenames, struct var_decl_expr * right){
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_TEMPLATEDECL;
+  res -> d.TEMPLATEDECL.typenames = typenames;
+  res -> d.TEMPLATEDECL.right = right;
   return res;
 }
 
@@ -308,6 +337,17 @@ void print_expr_type_list_as_argument_types(struct expr_type_list * args) {
   print_expr(args -> e);
   indent --;
   print_expr_type_list_as_argument_types(args -> next);
+}
+
+void print_typename_list(struct typename_list * args) {
+  if (args == NULL) {
+    return;
+  }
+  print_spaces();
+  indent ++;
+  printf("typename:\n%s",args->name);
+  indent --;
+  print_typename_list(args -> next);
 }
 
 struct print_ret * print_var_decl_expr_rec(struct var_decl_expr * e) {

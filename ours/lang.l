@@ -64,6 +64,13 @@
     return TM_RETURN;
 }
 
+"template" {
+    return TM_TEMPLATE;
+}
+
+"typename" {
+    return TM_TYPENAME;
+}
 
 [_A-Za-z][_A-Za-z0-9]* {
     yylval.i = new_str(yytext, yyleng);
