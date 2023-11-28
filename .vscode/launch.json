@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/ALIENWARE/Desktop/cs2612final/whiledb",
-      "program": "c:/Users/ALIENWARE/Desktop/cs2612final/whiledb/build/Debug/outDebug",
+      "cwd": "c:/Users/ALIENWARE/Desktop/cs2612final/ours",
+      "program": "c:/Users/ALIENWARE/Desktop/cs2612final/ours/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

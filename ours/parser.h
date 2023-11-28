@@ -41,21 +41,43 @@
    enum yytokentype {
      TM_NAT = 258,
      TM_IDENT = 259,
-     TM_LEFT_PAREN = 260,
-     TM_RIGHT_PAREN = 261,
-     TM_RIGHT_BRACKET = 262,
-     TM_LEFT_BRACKET = 263,
-     TM_LEFT_BRACE = 264,
-     TM_RIGHT_BRACE = 265,
-     TM_SEMICOL = 266,
-     TM_COMMA = 267,
-     TM_POINTER = 268,
-     TM_STRUCT = 269,
-     TM_UNION = 270,
-     TM_ENUM = 271,
-     TM_TYPEDEF = 272,
-     TM_INTTYPE = 273,
-     TM_CHARTYPE = 274
+     TM_LEFT_BRACE = 260,
+     TM_RIGHT_BRACE = 261,
+     TM_LEFT_PAREN = 262,
+     TM_RIGHT_PAREN = 263,
+     TM_SEMICOL = 264,
+     TM_COMMA = 265,
+     TM_VAR = 266,
+     TM_INTTYPE = 267,
+     TM_IF = 268,
+     TM_THEN = 269,
+     TM_ELSE = 270,
+     TM_WHILE = 271,
+     TM_DO = 272,
+     TM_FOR = 273,
+     TM_LOCAL = 274,
+     TM_IN = 275,
+     TM_CONTINUE = 276,
+     TM_BREAK = 277,
+     TM_RETURN = 278,
+     TM_ASGNOP = 279,
+     TM_OR = 280,
+     TM_AND = 281,
+     TM_NOT = 282,
+     TM_LT = 283,
+     TM_LE = 284,
+     TM_GT = 285,
+     TM_GE = 286,
+     TM_EQ = 287,
+     TM_NE = 288,
+     TM_PLUS = 289,
+     TM_MINUS = 290,
+     TM_MUL = 291,
+     TM_DIV = 292,
+     TM_MOD = 293,
+     TM_UMINUS = 294,
+     TM_DEREF = 295,
+     TM_ADDROF = 296
    };
 #endif
 
@@ -66,22 +88,21 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 12 "lang.y"
+#line 11 "lang.y"
 
 unsigned int n;
 char * i;
-struct type_list * tl;
-struct enum_ele_list * eel;
-struct left_type * lt;
+struct expr * e;
+struct cmd * c;
+struct decl_expr_type_list * detl;
+struct expr_type_list * etl;
 struct var_decl_expr * vde;
-struct glob_item * gi;
-struct glob_item_list * gil;
 void * none;
 
 
 
 /* Line 1676 of yacc.c  */
-#line 85 "parser.h"
+#line 106 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

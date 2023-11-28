@@ -3,7 +3,7 @@
 #include "lexer.h"
 #include "parser.h"
 
-extern struct glob_item_list * root;
+extern struct cmd * root;
 int yyparse();
 
 int main(int argc, char * * argv) {
@@ -20,7 +20,8 @@ int main(int argc, char * * argv) {
     printf("File %s can't be opened.\n", argv[1]);
     return 0;
   }
+  printf("Let's Go\n");
   yyparse();
   fclose(yyin);
-  print_glob_item_list(root);
+  print_cmd(root);
 }

@@ -3,17 +3,53 @@
 %{
 #include "lang.h"
 #include "parser.h"
-#include "lib.h"
 %}
 
 %%
+
+0|[1-9][0-9]* {
+    yylval.n = build_nat(yytext, yyleng);
+    return TM_NAT;
+}
 
 "var" {
     return TM_VAR;
 }
 
-"skip" {
-    return TM_SKIP;
+"int" {
+    return TM_INTTYPE;
+}
+
+"if" {
+    return TM_IF;
+}
+
+"then" {
+    return TM_THEN;
+}
+
+"else" {
+    return TM_ELSE;
+}
+
+"while" {
+    return TM_WHILE;
+}
+
+"do" {
+    return TM_DO;
+}
+
+"for" {
+    return TM_FOR;
+}
+
+"local" {
+    return TM_LOCAL;
+}
+
+"in" {
+    return TM_IN;
 }
 
 "continue" {
@@ -29,53 +65,19 @@
 }
 
 
-"int" {
-    return TM_INTTYPE;
-}
-
-"char" {
-    return TM_CHARTYPE;
-}
-
-"while" {
-    return TM_WHILE;
-}
-
-"DO" {
-    return TM_DO;
-}
-
-"IF" {
-    return TM_IF;
-}
-
-"THEN" {
-    return TM_THEN;
-}
-
-"ELSE" {
-    return TM_ELSE;
-}
-
-"FOR" {
-    return TM_FOR;
-}
-
-"LOCAL" {
-    return TM_LOCAL;
-}
-
-"IN" {
-    return TM_IN;
+[_A-Za-z][_A-Za-z0-9]* {
+    yylval.i = new_str(yytext, yyleng);
+    return TM_IDENT;
 }
 
 ";" {
     return TM_SEMICOL;
     }
 
+
 "," {
     return TM_COMMA;
-}
+    }
 
 "(" {
     return TM_LEFT_PAREN;
@@ -85,15 +87,6 @@
     return TM_RIGHT_PAREN;
     }
 
-"[" {
-    return TM_LEFT_BRACKET;
-}
-
-"]" {
-    return TM_RIGHT_BRACKET;
-}
-
-
 "{" {
     return TM_LEFT_BRACE;
     }
@@ -102,22 +95,69 @@
     return TM_RIGHT_BRACE;
     }
 
-"*" {
-    return TM_POINTER;
+"+" {
+    return TM_PLUS;
     }
 
-0|[1-9][0-9]* {
-    yylval.n = build_nat(yytext, yyleng);
-    return TM_NAT;
-}
+"-" {
+    return TM_MINUS;
+    }
 
- [_A-Za-z][_A-Za-z0-9]*  {
-    yylval.i = new_str(yytext, yyleng);
-    return TM_IDENT;
-}
+"*" {
+    return TM_MUL;
+    }
 
+"/" {
+    return TM_DIV;
+    }
 
+"%" {
+    return TM_MOD;
+    }
 
+"<" {
+    return TM_LT;
+    }
+
+">" {
+    return TM_GT;
+    }
+
+"<=" {
+    return TM_LE;
+    }
+
+">=" {
+    return TM_GE;
+    }
+
+"==" {
+    return TM_EQ;
+    }
+
+"!=" {
+    return TM_NE;
+    }
+
+"=" {
+    return TM_ASGNOP;
+    }
+
+"&&" {
+    return TM_AND;
+    }
+
+"||" {
+    return TM_OR;
+    }
+
+"!" {
+    return TM_NOT;
+    }
+
+"&" {
+    return TM_ADDROF;
+    }
 
 
 [ \t\n\r]    { };

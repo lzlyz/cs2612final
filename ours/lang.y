@@ -3,309 +3,318 @@
 	#include <stdio.h>
 	#include "lang.h"
 	#include "lexer.h"
-	#include "lib.h"
 	void yyerror(char *);
 	int yylex(void);
-        struct glob_item_list * root;
+        struct cmd * root;
 %}
 
 %union {
 unsigned int n;
 char * i;
-struct type_list * tl;
-struct enum_ele_list * eel;
-struct left_type * lt;
+struct expr * e;
+struct cmd * c;
+struct decl_expr_type_list * detl;
+struct expr_type_list * etl;
 struct var_decl_expr * vde;
-struct glob_item * gi;
-struct glob_item_list * gil;
 void * none;
 }
 
 // Terminals
 %token <n> TM_NAT
 %token <i> TM_IDENT
-
-%token <none> TM_LEFT_PAREN TM_RIGHT_PAREN
-%token <none> TM_RIGHT_BRACKET TM_LEFT_BRACKET
 %token <none> TM_LEFT_BRACE TM_RIGHT_BRACE
-%token <none> TM_SEMICOL
-%token <none> TM_COMMA
-%token <none> TM_POINTER
-%token <none> TM_STRUCT
-%token <none> TM_UNION
-%token <none> TM_ENUM
-%token <none> TM_TYPEDEF
-%token <none> TM_INTTYPE
-%token <none> TM_CHARTYPE
+%token <none> TM_LEFT_PAREN TM_RIGHT_PAREN
+%token <none> TM_SEMICOL TM_COMMA
+%token <none> TM_VAR TM_INTTYPE TM_IF TM_THEN TM_ELSE TM_WHILE TM_DO
+%token <none> TM_FOR TM_LOCAL TM_IN TM_CONTINUE TM_BREAK TM_RETURN
+%token <none> TM_ASGNOP
+%token <none> TM_OR
+%token <none> TM_AND
+%token <none> TM_NOT
+%token <none> TM_LT TM_LE TM_GT TM_GE TM_EQ TM_NE
+%token <none> TM_PLUS TM_MINUS
+%token <none> TM_MUL TM_DIV TM_MOD
+%token <none> TM_UMINUS TM_DEREF TM_ADDROF
 
 // Nonterminals
-%type <gil> NT_WHOLE
-%type <lt> NT_LEFT_TYPE
-%type <tl> NT_FIELD_LIST
-%type <tl> NT_ARGUMENT_TYPE_LIST
-%type <gil> NT_GLOB_ITEM
-%type <gil> NT_GLOB_ITEM_LIST
-%type <vde> NT_NAMED_RIGHT_TYPE_EXPR
-%type <vde> NT_ANNON_RIGHT_TYPE_EXPR
-%type <eel> NT_ENUM_ELE_LIST
-
-
+%type <c> NT_WHOLE
+%type <c> NT_CMD
+%type <e> NT_EXPR0
+%type <e> NT_EXPR1
+%type <e> NT_EXPR
+%type <etl> NT_EXPR_TYPE_LIST
+%type <detl> NT_DECL_ARGUMENT_TYPE_LIST
+%type <vde> NT_DECL_RIGHT_EXPR
+%type <vde> NT_ANNON_RIGHT_EXPR
 
 // Priority
-%nonassoc TM_STRUCT TM_UNION TM_ENUM TM_TYPEDEF TM_INTTYPE TM_CHARTYPE
-%right TM_POINTER
-%left TM_LEFT_BRACE TM_RIGHT_BRACE
-%left TM_LEFT_BRACKET TM_RIGHT_BRACKET
+%nonassoc TM_ASGNOP
+%left TM_OR
+%left TM_AND
+%left TM_LT TM_LE TM_GT TM_GE TM_EQ TM_NE
+%left TM_PLUS TM_MINUS
+%left TM_MUL TM_DIV TM_MOD
+%right TM_UMINUS TM_DEREF TM_ADDROF
+%left TM_NOT
 %left TM_LEFT_PAREN TM_RIGHT_PAREN
-%right TM_COMMA 
 %right TM_SEMICOL
+
 %%
+
 NT_WHOLE:
-  NT_GLOB_ITEM_LIST
+  NT_CMD
   {
     $$ = ($1);
     root = $$;
   }
 ;
-NT_LEFT_TYPE:
-  TM_INTTYPE
+
+NT_CMD:
+  NT_CMD TM_SEMICOL NT_CMD
   {
-    $$ = TIntType();
+    $$ = (TSeq($1,$3));
   }
-| TM_CHARTYPE
- {
-    $$ =TCharType();
- }
+| TM_VAR TM_INTTYPE NT_DECL_RIGHT_EXPR
+  {
+    $$ = (TDecl($3));
+  }
+| NT_EXPR TM_ASGNOP NT_EXPR
+  {
+    $$ = (TAsgn($1,$3));
+  }
+| TM_IF NT_EXPR TM_THEN TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE TM_ELSE TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE
+  {
+    $$ = (TIf($2,$5,$9));
+  }
+| TM_WHILE TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN TM_DO TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE
+  {
+    $$ = (TWhileDo($3,$7));
+  }
+| TM_DO TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE TM_WHILE TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN
+  {
+    $$ = (TDoWhile($3,$7));
+  }
+| TM_FOR TM_LEFT_PAREN NT_CMD TM_SEMICOL NT_EXPR TM_SEMICOL NT_CMD TM_RIGHT_PAREN TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE // Warning, this cmd is not the correct cmd ,it need modify
+  {
+    $$ = (TFor($3,$5,$7,$10));
+  }
+| TM_LOCAL TM_IDENT TM_IN TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE
+  {
+    $$ = (TLocal($2,$5));
+  }
+| TM_CONTINUE
+  {
+    $$ = (TContinue());
+  }
+| TM_BREAK
+  {
+    $$ = (TBreak());
+  }
+| TM_RETURN
+  {
+    $$ = (TReturn());
+  }
+| NT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
+  {
+    $$ = (TProc($1,TETLNil()));
+  }
+| NT_EXPR TM_LEFT_PAREN NT_EXPR_TYPE_LIST TM_RIGHT_PAREN
+  {
+    $$ = (TProc($1,$3));
+  }
+;
+
+
+NT_EXPR0:
+  TM_NAT
+  {
+    $$ = (TConst($1));
+  }
+| TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN
+  {
+    $$ = ($2);
+  }
 | TM_IDENT
   {
-    $$ =TDefinedType($1);
-  }
-| TM_STRUCT TM_IDENT TM_LEFT_BRACE NT_FIELD_LIST TM_RIGHT_BRACE
-  {
-	$$ =  TNewStructType($2, $4);
-  }
-| TM_STRUCT  TM_LEFT_BRACE NT_FIELD_LIST TM_RIGHT_BRACE
-  {
-	$$ =  TNewStructType(NULL, $3);
-  }
-| TM_STRUCT  TM_IDENT TM_LEFT_BRACE  TM_RIGHT_BRACE
-  {
-	$$ =  TNewStructType($2, TTNil());
-  }
-
-| TM_STRUCT  TM_LEFT_BRACE  TM_RIGHT_BRACE
-  {
-	$$ =  TNewStructType(NULL, TTNil());
-  }
-
-| TM_STRUCT TM_IDENT 
-  {
-	$$ = TStructType($2);
-  }
-
-| TM_UNION TM_IDENT TM_LEFT_BRACE NT_FIELD_LIST TM_RIGHT_BRACE
-  {
-	$$ = TNewUnionType($2, $4);
-  }
-| TM_UNION  TM_LEFT_BRACE NT_FIELD_LIST TM_RIGHT_BRACE
-  {
-	$$ = TNewUnionType(NULL, $3);
-  }
-| TM_UNION TM_IDENT TM_LEFT_BRACE  TM_RIGHT_BRACE
-  {
-	$$ = TNewUnionType($2, TTNil());
-  }
-| TM_UNION  TM_LEFT_BRACE  TM_RIGHT_BRACE
-  {
-	$$ = TNewUnionType(NULL, TTNil());
-  }
-| TM_UNION TM_IDENT
-  {
-	$$ = TUnionType($2);
-  }
-
-| TM_ENUM TM_IDENT TM_LEFT_BRACE NT_ENUM_ELE_LIST TM_RIGHT_BRACE
-  {
-	$$ = TNewEnumType($2, $4);
-  }
-| TM_ENUM  TM_LEFT_BRACE NT_ENUM_ELE_LIST TM_RIGHT_BRACE
-  {
-	$$ = TNewEnumType(NULL, $3); 
-  }
-
-| TM_ENUM TM_IDENT 
-  {
-	$$ = TEnumType($2); 
+    $$ = (TVar($1));
   }
 ;
 
-NT_FIELD_LIST:
-  NT_LEFT_TYPE NT_NAMED_RIGHT_TYPE_EXPR TM_SEMICOL
+NT_EXPR1:
+  TM_NOT NT_EXPR
   {
-    $$ = TTCons($1, $2, TTNil());
+    $$ = (TUnOp(T_NOT,$2));
   }
-| NT_LEFT_TYPE NT_NAMED_RIGHT_TYPE_EXPR TM_SEMICOL NT_FIELD_LIST
+| NT_EXPR0
   {
-    $$ = TTCons($1, $2, $4);
-  }
-;
-NT_ARGUMENT_TYPE_LIST:
-  NT_LEFT_TYPE NT_ANNON_RIGHT_TYPE_EXPR TM_COMMA NT_ARGUMENT_TYPE_LIST
-  {
-	$$ = TTCons($1, $2, $4); 
-  }
-|  NT_LEFT_TYPE NT_ANNON_RIGHT_TYPE_EXPR
-  {
-	$$ = TTCons($1,$2, TTNil()) ; 
-  }
-| NT_LEFT_TYPE
-  {
-    $$ = TTCons($1,TOrigType(""), TTNil()) ; 
-  }
-| NT_LEFT_TYPE TM_COMMA NT_ARGUMENT_TYPE_LIST
-  {
-    $$ = TTCons($1, TOrigType(""), $3); 
-  }
-;
-NT_ENUM_ELE_LIST:
-  TM_IDENT 
-  {
-    $$ = TECons($1, TENil());
-  }
-| TM_IDENT TM_COMMA NT_ENUM_ELE_LIST
-  {
-    $$= TECons($1, $3);
+    $$ = ($1);
   }
 ;
 
 
+NT_EXPR:
+  NT_EXPR1
+  {
+    $$ = ($1);
+  }
+| TM_MINUS NT_EXPR %prec TM_UMINUS
+  {
+    $$ = (TUnOp(T_UMINUS,$2));
+  }
+| TM_MUL NT_EXPR  %prec TM_DEREF
+  {
+    $$ = (TDeref($2));
+  }
+| TM_ADDROF NT_EXPR  %prec TM_ADDROF
+  {
+    $$ = (TAddrOf($2));
+  }
+| NT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
+  {
+    $$ = (TFunc($1,TETLNil()));
+  }
+| NT_EXPR TM_LEFT_PAREN NT_EXPR_TYPE_LIST TM_RIGHT_PAREN
+  {
+    $$ = (TFunc($1,$3));
+  }
+| NT_EXPR TM_MUL NT_EXPR
+  {
+    $$ = (TBinOp(T_MUL,$1,$3));
+  }
+| NT_EXPR TM_PLUS NT_EXPR
+  {
+    $$ = (TBinOp(T_PLUS,$1,$3));
+  }
+| NT_EXPR TM_MINUS NT_EXPR
+  {
+    $$ = (TBinOp(T_MINUS,$1,$3));
+  }
+| NT_EXPR TM_DIV NT_EXPR
+  {
+    $$ = (TBinOp(T_DIV,$1,$3));
+  }
+| NT_EXPR TM_MOD NT_EXPR
+  {
+    $$ = (TBinOp(T_MOD,$1,$3));
+  }
+| NT_EXPR TM_LT NT_EXPR
+  {
+    $$ = (TBinOp(T_LT,$1,$3));
+  }
+| NT_EXPR TM_GT NT_EXPR
+  {
+    $$ = (TBinOp(T_GT,$1,$3));
+  }
+| NT_EXPR TM_LE NT_EXPR
+  {
+    $$ = (TBinOp(T_LE,$1,$3));
+  }
+| NT_EXPR TM_GE NT_EXPR
+  {
+    $$ = (TBinOp(T_GE,$1,$3));
+  }
+| NT_EXPR TM_EQ NT_EXPR
+  {
+    $$ = (TBinOp(T_EQ,$1,$3));
+  }
+| NT_EXPR TM_NE NT_EXPR
+  {
+    $$ = (TBinOp(T_NE,$1,$3));
+  }
+| NT_EXPR TM_AND NT_EXPR
+  {
+    $$ = (TBinOp(T_AND,$1,$3));
+  }
+| NT_EXPR TM_OR NT_EXPR
+  {
+    $$ = (TBinOp(T_OR,$1,$3));
+  }
+;
 
-
-
-
-NT_NAMED_RIGHT_TYPE_EXPR:
+NT_DECL_RIGHT_EXPR:
   TM_IDENT
   {
-	$$ = TOrigType($1);
+	$$ = TIntType($1);
   }
-| TM_POINTER NT_NAMED_RIGHT_TYPE_EXPR
+| TM_MUL NT_DECL_RIGHT_EXPR
   {
 	$$ = TPtrType($2);
   }
-| NT_NAMED_RIGHT_TYPE_EXPR TM_LEFT_BRACKET TM_NAT TM_RIGHT_BRACKET
-  {
-    $$ = TArrayType($1, $3);
-  }
-| NT_NAMED_RIGHT_TYPE_EXPR TM_LEFT_PAREN NT_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
+| NT_DECL_RIGHT_EXPR TM_LEFT_PAREN NT_DECL_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {
     $$ = TFuncType($1, $3);
   }
-| NT_NAMED_RIGHT_TYPE_EXPR TM_LEFT_PAREN  TM_RIGHT_PAREN
+| NT_DECL_RIGHT_EXPR TM_LEFT_PAREN  TM_RIGHT_PAREN
   {
-	$$ = TFuncType($1,TTNil());
+	$$ = TFuncType($1,TDETLNil());
   }
-| TM_LEFT_PAREN NT_NAMED_RIGHT_TYPE_EXPR TM_RIGHT_PAREN
+| TM_LEFT_PAREN NT_DECL_RIGHT_EXPR TM_RIGHT_PAREN
   {
-	$$ = ($2); 
+	$$ = ($2);
   }
 ;
 
-NT_ANNON_RIGHT_TYPE_EXPR:
-  TM_POINTER
- {
-    $$= TPtrType(TOrigType(""));
- }
+NT_DECL_ARGUMENT_TYPE_LIST:
+  TM_INTTYPE NT_ANNON_RIGHT_EXPR TM_COMMA NT_DECL_ARGUMENT_TYPE_LIST
+  {
+	  $$ = TDETLCons($2, $4); 
+  }
+| TM_INTTYPE NT_ANNON_RIGHT_EXPR
+  {
+	  $$ = TDETLCons($2, TDETLNil()) ; 
+  }
+| TM_INTTYPE
+  {
+    $$ = TDETLCons(TIntType(""), TDETLNil()) ; 
+  }
+| TM_INTTYPE TM_COMMA NT_DECL_ARGUMENT_TYPE_LIST
+  {
+    $$ = TDETLCons(TIntType(""), $3); 
+  }
+;
 
-| TM_LEFT_BRACKET TM_NAT TM_RIGHT_BRACKET
- {
-    $$= TArrayType(TOrigType(""), $2);
- }
+NT_ANNON_RIGHT_EXPR:
+  TM_MUL
+  {
+    $$= TPtrType(TIntType(""));
+  }
 | TM_LEFT_PAREN TM_RIGHT_PAREN
   {
-    $$= TFuncType(TOrigType(""), TTNil());
+    $$= TFuncType(TIntType(""), TDETLNil());
   }
-| TM_POINTER NT_ANNON_RIGHT_TYPE_EXPR
- {
-    $$=TPtrType($2);
- }
-| NT_ANNON_RIGHT_TYPE_EXPR TM_LEFT_BRACKET TM_NAT TM_RIGHT_BRACKET
+| TM_MUL NT_ANNON_RIGHT_EXPR
   {
-    $$= TArrayType( $1 ,$3);
+    $$= TPtrType($2);
   }
-| NT_ANNON_RIGHT_TYPE_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
+| NT_ANNON_RIGHT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
   {
-    $$ = TFuncType($1 , TTNil());
+    $$ = TFuncType($1 , TDETLNil());
   }
-| NT_ANNON_RIGHT_TYPE_EXPR TM_LEFT_PAREN NT_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
+| NT_ANNON_RIGHT_EXPR TM_LEFT_PAREN NT_DECL_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {
     $$ = TFuncType($1 ,$3);
   }
-| TM_LEFT_PAREN NT_ANNON_RIGHT_TYPE_EXPR TM_RIGHT_PAREN
+| TM_LEFT_PAREN NT_ANNON_RIGHT_EXPR TM_RIGHT_PAREN
   {
     $$=($2);
   }
-| TM_LEFT_PAREN NT_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
+| TM_LEFT_PAREN NT_DECL_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {
-    $$= TFuncType(TOrigType(""), $2);
+    $$= TFuncType(TIntType(""), $2);
   }
 ;
 
-
-NT_GLOB_ITEM_LIST:
-  NT_GLOB_ITEM
+NT_EXPR_TYPE_LIST:
+  NT_EXPR TM_COMMA NT_EXPR_TYPE_LIST
   {
-    $$ =TGCons($1, TGNil());
+	  $$ = TETLCons($1, $3); 
   }
-| NT_GLOB_ITEM NT_GLOB_ITEM_LIST
+| NT_EXPR
   {
-    $$ =TGCons($1, $2);
+	  $$ = TETLCons($1, TETLNil()) ; 
   }
 ;
 
-NT_GLOB_ITEM:
-  TM_STRUCT TM_IDENT TM_LEFT_BRACE TM_RIGHT_BRACE TM_SEMICOL
- {
-    $$=TStructDef($2, TTNil());
- }
-|
-  TM_STRUCT TM_IDENT TM_LEFT_BRACE NT_FIELD_LIST TM_RIGHT_BRACE TM_SEMICOL
- {
-    $$=TStructDef($2,$4);
- }
-| TM_STRUCT TM_IDENT TM_SEMICOL
-  {
-    $$=TStructDecl($2);
-  }
-| TM_UNION TM_IDENT TM_LEFT_BRACE NT_FIELD_LIST TM_RIGHT_BRACE TM_SEMICOL
-  {
-    $$=TUnionDef($2 ,$4);
-  }
-| TM_UNION TM_IDENT TM_LEFT_BRACE TM_RIGHT_BRACE TM_SEMICOL
-  {
-    $$=TUnionDef($2, TTNil());
-  }
-| TM_UNION TM_IDENT TM_SEMICOL
-  {
-    $$=TUnionDecl($2);
-  }
-| TM_ENUM TM_IDENT TM_SEMICOL
-  {
-    $$=TEnumDecl($2);
-  }
-| TM_ENUM TM_IDENT TM_LEFT_BRACE NT_ENUM_ELE_LIST TM_RIGHT_BRACE TM_SEMICOL
-  {
-    $$= TEnumDef($2, $4);
-  }
-| TM_TYPEDEF NT_LEFT_TYPE NT_NAMED_RIGHT_TYPE_EXPR TM_SEMICOL
-  {
-    $$= TTypeDef($2, $3);
-  }
-| NT_LEFT_TYPE NT_NAMED_RIGHT_TYPE_EXPR TM_SEMICOL
-  {
-    $$=TVarDef ($1, $2);
-  }
-
-;
 
 %%
 

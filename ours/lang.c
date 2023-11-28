@@ -3,9 +3,9 @@
 #include <string.h>
 #include "lang.h"
 
-struct type_list * new_type_list_ptr() {
-  struct type_list * res =
-    (struct type_list *) malloc(sizeof(struct type_list));
+struct decl_expr_type_list * new_decl_expr_type_list_ptr() {
+  struct decl_expr_type_list * res =
+    (struct decl_expr_type_list *) malloc(sizeof(struct decl_expr_type_list));
   if (res == NULL) {
     printf("Failure in malloc.\n");
     exit(0);
@@ -13,19 +13,9 @@ struct type_list * new_type_list_ptr() {
   return res;
 }
 
-struct enum_ele_list * new_enum_ele_list_ptr() {
-  struct enum_ele_list * res =
-    (struct enum_ele_list *) malloc(sizeof(struct enum_ele_list));
-  if (res == NULL) {
-    printf("Failure in malloc.\n");
-    exit(0);
-  }
-  return res;
-}
-
-struct left_type * new_left_type_ptr() {
-  struct left_type * res =
-    (struct left_type *) malloc(sizeof(struct left_type));
+struct expr_type_list * new_expr_type_list_ptr() {
+  struct expr_type_list * res =
+    (struct expr_type_list *) malloc(sizeof(struct expr_type_list));
   if (res == NULL) {
     printf("Failure in malloc.\n");
     exit(0);
@@ -43,9 +33,8 @@ struct var_decl_expr * new_var_decl_expr_ptr() {
   return res;
 }
 
-struct glob_item * new_glob_item_ptr() {
-  struct glob_item * res =
-    (struct glob_item *) malloc(sizeof(struct glob_item));
+struct expr * new_expr_ptr() {
+  struct expr * res = (struct expr *) malloc(sizeof(struct expr));
   if (res == NULL) {
     printf("Failure in malloc.\n");
     exit(0);
@@ -53,9 +42,8 @@ struct glob_item * new_glob_item_ptr() {
   return res;
 }
 
-struct glob_item_list * new_glob_item_list_ptr() {
-  struct glob_item_list * res =
-    (struct glob_item_list *) malloc(sizeof(struct glob_item_list));
+struct cmd * new_cmd_ptr() {
+  struct cmd * res = (struct cmd *) malloc(sizeof(struct cmd));
   if (res == NULL) {
     printf("Failure in malloc.\n");
     exit(0);
@@ -63,98 +51,32 @@ struct glob_item_list * new_glob_item_list_ptr() {
   return res;
 }
 
-struct type_list * TTNil() {
+struct decl_expr_type_list * TDETLNil() {
   return NULL;
 }
 
-struct type_list * TTCons(struct left_type * t, struct var_decl_expr * e, 
-                           struct type_list * next) {
-  struct type_list * res = new_type_list_ptr();
-  res -> t = t;
+struct decl_expr_type_list * TDETLCons(struct var_decl_expr * e, struct decl_expr_type_list * next) {
+  struct decl_expr_type_list * res = new_decl_expr_type_list_ptr();
   res -> e = e;
   res -> next = next;
   return res;
 }
 
-struct enum_ele_list * TENil() {
+struct expr_type_list * TETLNil() {
   return NULL;
 }
 
-struct enum_ele_list * TECons(char * name, struct enum_ele_list * next) {
-  struct enum_ele_list * res = new_enum_ele_list_ptr();
-  res -> name = name;
+struct expr_type_list * TETLCons(struct expr * e, struct expr_type_list * next) {
+  struct expr_type_list * res = new_expr_type_list_ptr();
+  res -> e = e;
   res -> next = next;
   return res;
 }
 
-struct left_type * TStructType(char * name) {
-  struct left_type * res = new_left_type_ptr();
-  res -> t = T_STRUCT_TYPE;
-  res -> d.STRUCT_TYPE.name = name;
-  return res;
-}
-
-struct left_type * TNewStructType(char * name, struct type_list * fld) {
-  struct left_type * res = new_left_type_ptr();
-  res -> t = T_NEW_STRUCT_TYPE;
-  res -> d.NEW_STRUCT_TYPE.name = name;
-  res -> d.NEW_STRUCT_TYPE.fld = fld;
-  return res;
-}
-
-struct left_type * TUnionType(char * name) {
-  struct left_type * res = new_left_type_ptr();
-  res -> t = T_UNION_TYPE;
-  res -> d.UNION_TYPE.name = name;
-  return res;
-}
-
-struct left_type * TNewUnionType(char * name, struct type_list * fld) {
-  struct left_type * res = new_left_type_ptr();
-  res -> t = T_NEW_UNION_TYPE;
-  res -> d.NEW_UNION_TYPE.name = name;
-  res -> d.NEW_UNION_TYPE.fld = fld;
-  return res;
-}
-
-struct left_type * TEnumType(char * name) {
-  struct left_type * res = new_left_type_ptr();
-  res -> t = T_ENUM_TYPE;
-  res -> d.ENUM_TYPE.name = name;
-  return res;
-}
-
-struct left_type * TNewEnumType(char * name, struct enum_ele_list * ele) {
-  struct left_type * res = new_left_type_ptr();
-  res -> t = T_NEW_ENUM_TYPE;
-  res -> d.NEW_ENUM_TYPE.name = name;
-  res -> d.NEW_ENUM_TYPE.ele = ele;
-  return res;
-}
-
-struct left_type * TIntType() {
-  struct left_type * res = new_left_type_ptr();
-  res -> t = T_INT_TYPE;
-  return res;
-}
-
-struct left_type * TCharType() {
-  struct left_type * res = new_left_type_ptr();
-  res -> t = T_CHAR_TYPE;
-  return res;
-}
-
-struct left_type * TDefinedType(char * name) {
-  struct left_type * res = new_left_type_ptr();
-  res -> t = T_DEFINED_TYPE;
-  res -> d.DEFINED_TYPE.name = name;
-  return res;
-}
-
-struct var_decl_expr * TOrigType(char * name) {
+struct var_decl_expr * TIntType(char * name) {
   struct var_decl_expr * res = new_var_decl_expr_ptr();
-  res -> t = T_ORIG_TYPE;
-  res -> d.ORIG_TYPE.name = name;
+  res -> t = T_INT_TYPE;
+  res -> d.INT_TYPE.name = name;
   return res;
 }
 
@@ -165,17 +87,7 @@ struct var_decl_expr * TPtrType(struct var_decl_expr * base) {
   return res;
 }
 
-struct var_decl_expr * TArrayType(struct var_decl_expr * base,
-                                  unsigned int size) {
-  struct var_decl_expr * res = new_var_decl_expr_ptr();
-  res -> t = T_ARRAY_TYPE;
-  res -> d.ARRAY_TYPE.base = base;
-  res -> d.ARRAY_TYPE.size = size;
-  return res;
-}
-
-struct var_decl_expr * TFuncType(struct var_decl_expr * ret,
-                                 struct type_list * args) {
+struct var_decl_expr * TFuncType(struct var_decl_expr * ret, struct decl_expr_type_list * args) {
   struct var_decl_expr * res = new_var_decl_expr_ptr();
   res -> t = T_FUNC_TYPE;
   res -> d.FUNC_TYPE.ret = ret;
@@ -183,78 +95,151 @@ struct var_decl_expr * TFuncType(struct var_decl_expr * ret,
   return res;
 }
 
-struct glob_item * TStructDef(char * name, struct type_list * fld) {
-  struct glob_item * res = new_glob_item_ptr();
-  res -> t = T_STRUCT_DEF;
-  res -> d.STRUCT_DEF.name = name;
-  res -> d.STRUCT_DEF.fld = fld;
+struct expr * TConst(unsigned int value) {
+  struct expr * res = new_expr_ptr();
+  res -> t = T_CONST;
+  res -> d.CONST.value = value;
   return res;
 }
 
-struct glob_item * TStructDecl(char * name) {
-  struct glob_item * res = new_glob_item_ptr();
-  res -> t = T_STRUCT_DECL;
-  res -> d.STRUCT_DECL.name = name;
+struct expr * TVar(char * name) {
+  struct expr * res = new_expr_ptr();
+  res -> t = T_VAR;
+  res -> d.VAR.name = name;
   return res;
 }
 
-struct glob_item * TUnionDef(char * name, struct type_list * fld) {
-  struct glob_item * res = new_glob_item_ptr();
-  res -> t = T_UNION_DEF;
-  res -> d.UNION_DEF.name = name;
-  res -> d.UNION_DEF.fld = fld;
+struct expr * TBinOp(enum BinOpType op, struct expr * left, struct expr * right) {
+  struct expr * res = new_expr_ptr();
+  res -> t = T_BINOP;
+  res -> d.BINOP.op = op;
+  res -> d.BINOP.left = left;
+  res -> d.BINOP.right = right;
   return res;
 }
 
-struct glob_item * TUnionDecl(char * name) {
-  struct glob_item * res = new_glob_item_ptr();
-  res -> t = T_UNION_DECL;
-  res -> d.UNION_DECL.name = name;
+struct expr * TUnOp(enum UnOpType op, struct expr * arg) {
+  struct expr * res = new_expr_ptr();
+  res -> t = T_UNOP;
+  res -> d.UNOP.op = op;
+  res -> d.UNOP.arg = arg;
   return res;
 }
 
-struct glob_item * TEnumDef(char * name, struct enum_ele_list * ele) {
-  struct glob_item * res = new_glob_item_ptr();
-  res -> t = T_ENUM_DEF;
-  res -> d.ENUM_DEF.name = name;
-  res -> d.ENUM_DEF.ele = ele;
+struct expr * TDeref(struct expr * arg) {
+  struct expr * res = new_expr_ptr();
+  res -> t = T_DEREF;
+  res -> d.DEREF.arg = arg;
   return res;
 }
 
-struct glob_item * TEnumDecl(char * name) {
-  struct glob_item * res = new_glob_item_ptr();
-  res -> t = T_ENUM_DECL;
-  res -> d.ENUM_DECL.name = name;
+struct expr * TAddrOf(struct expr * arg) {
+  struct expr * res = new_expr_ptr();
+  res -> t = T_ADDROF;
+  res -> d.ADDROF.arg = arg;
   return res;
 }
 
-struct glob_item * TTypeDef(struct left_type * t, struct var_decl_expr * e) {
-  struct glob_item * res = new_glob_item_ptr();
-  res -> t = T_TYPE_DEF;
-  res -> d.TYPE_DEF.t = t;
-  res -> d.TYPE_DEF.e = e;
+struct expr * TFunc(struct expr * func, struct expr_type_list * args) {
+  struct expr * res = new_expr_ptr();
+  res -> t = T_FUNC;
+  res -> d.FUNC.func = func;
+  res -> d.FUNC.args = args;
   return res;
 }
 
-struct glob_item * TVarDef(struct left_type * t, struct var_decl_expr * e) {
-  struct glob_item * res = new_glob_item_ptr();
-  res -> t = T_VAR_DEF;
-  res -> d.VAR_DEF.t = t;
-  res -> d.VAR_DEF.e = e;
+struct cmd * TDecl(struct var_decl_expr * right) {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_DECL;
+  res -> d.DECL.right = right;
   return res;
 }
 
-struct glob_item_list * TGNil() {
-  return NULL;
-}
-
-struct glob_item_list * TGCons(struct glob_item * data,
-                               struct glob_item_list * next) {
-  struct glob_item_list * res = new_glob_item_list_ptr();
-  res -> data = data;
-  res -> next = next;
+struct cmd * TAsgn(struct expr * left, struct expr * right) {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_ASGN;
+  res -> d.ASGN.left = left;
+  res -> d.ASGN.right = right;
   return res;
 }
+
+struct cmd * TSeq(struct cmd * left, struct cmd * right) {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_SEQ;
+  res -> d.SEQ.left = left;
+  res -> d.SEQ.right = right;
+  return res;
+}
+
+struct cmd * TIf(struct expr * cond, struct cmd * left, struct cmd * right) {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_IF;
+  res -> d.IF.cond = cond;
+  res -> d.IF.left = left;
+  res -> d.IF.right = right;
+  return res;
+}
+
+struct cmd * TWhileDo(struct expr * cond, struct cmd * body) {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_WHILEDO;
+  res -> d.WHILEDO.cond = cond;
+  res -> d.WHILEDO.body = body;
+  return res;
+}
+
+struct cmd * TDoWhile(struct cmd * body, struct expr * cond) {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_DOWHILE;
+  res -> d.DOWHILE.cond = cond;
+  res -> d.DOWHILE.body = body;
+  return res;
+}
+
+struct cmd * TFor(struct cmd * init, struct expr * cond, struct cmd * nxt, struct cmd * body) {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_FOR;
+  res -> d.FOR.body = init;
+  res -> d.FOR.cond = cond;
+  res -> d.FOR.body = nxt;
+  res -> d.FOR.body = body;
+  return res;
+}
+
+struct cmd * TLocal(char * var, struct cmd * body) {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_LOCAL;
+  res -> d.LOCAL.var = var;
+  res -> d.LOCAL.body = body;
+  return res;
+}
+
+struct cmd * TContinue() {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_CONTINUE;
+  return res;
+}
+
+struct cmd * TBreak() {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_BREAK;
+  return res;
+}
+
+struct cmd * TReturn() {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_RETURN;
+  return res;
+}
+
+struct cmd * TProc(struct expr * func, struct expr_type_list * args) {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_PROC;
+  res -> d.PROC.proc = func;
+  res -> d.PROC.args = args;
+  return res;
+}
+
 
 int indent = 0;
 
@@ -265,106 +250,14 @@ void print_spaces() {
   }
 }
 
-void print_type_list_as_fields(struct type_list * fld) {
-  if (fld == NULL) {
-    return;
-  }
+void print_int(){
   print_spaces();
-  printf("Field:\n");
-  indent ++;
-  print_left_type(fld -> t);
-  print_var_decl_expr_for_field(fld -> e);
-  indent --;
-  print_type_list_as_fields(fld -> next);
-}
-
-void print_type_list_as_argument_types(struct type_list * args) {
-  if (args == NULL) {
-    return;
-  }
-  print_spaces();
-  printf("Argument type:\n");
-  indent ++;
-  print_left_type(args -> t);
-  print_annon_var_decl_expr(args -> e);
-  indent --;
-  print_type_list_as_argument_types(args -> next);
-}
-
-void print_enum_ele_list(struct enum_ele_list * ele) {
-  if (ele == NULL) {
-    return;
-  }
-  printf(" %s", ele -> name);
-  print_enum_ele_list(ele -> next);
-}
-
-void print_left_type(struct left_type * t) {
-  switch (t -> t) {
-  case T_STRUCT_TYPE:
-    print_spaces();
-    printf("Left type: struct %s\n", t -> d.STRUCT_TYPE.name);
-    return;
-  case T_NEW_STRUCT_TYPE:
-    print_spaces();
-    if (t -> d.NEW_STRUCT_TYPE.name == NULL) {
-      printf("Left type: new annonymous struct\n");
-    }
-    else {
-      printf("Left type: new struct %s\n", t -> d.NEW_STRUCT_TYPE.name);
-    }
-    indent ++;
-    print_type_list_as_fields(t -> d.NEW_STRUCT_TYPE.fld);
-    indent --;
-    return;
-  case T_UNION_TYPE:
-    print_spaces();
-    printf("Left type: union %s\n", t -> d.UNION_TYPE.name);
-    return;
-  case T_NEW_UNION_TYPE:
-    print_spaces();
-    if (t -> d.NEW_UNION_TYPE.name == NULL) {
-      printf("Left type: new annonymous union\n");
-    }
-    else {
-      printf("Left type: new union %s\n", t -> d.NEW_UNION_TYPE.name);
-    }
-    indent ++;
-    print_type_list_as_fields(t -> d.NEW_UNION_TYPE.fld);
-    indent --;
-    return;
-  case T_ENUM_TYPE:
-    print_spaces();
-    printf("Left type: enum %s\n", t -> d.ENUM_TYPE.name);
-    return;
-  case T_NEW_ENUM_TYPE:
-    print_spaces();
-    if (t -> d.NEW_ENUM_TYPE.name == NULL) {
-      printf("Left type: new annonymous enum\n");
-    }
-    else {
-      printf("Left type: new enum %s (", t -> d.NEW_ENUM_TYPE.name);
-      print_enum_ele_list(t -> d.NEW_ENUM_TYPE.ele);
-      printf(" )\n");
-    }
-    return;
-  case T_INT_TYPE:
-    print_spaces();
-    printf("Left type: int\n");
-    return;
-  case T_CHAR_TYPE:
-    print_spaces();
-    printf("Left type: char\n");
-    return;
-  case T_DEFINED_TYPE:
-    print_spaces();
-    printf("Left type: defined type %s\n", t -> d.DEFINED_TYPE.name);
-    return;
-  }
+  printf("Left type: int\n");
+  return;
 }
 
 enum PrintRetType {
-  T_ORIG_TYPE_RETURN,
+  T_INT_TYPE_RETURN,
   T_FUNC_TYPE_RETURN
 };
 
@@ -376,10 +269,10 @@ struct print_ret {
   } d;
 };
 
-struct print_ret * OrigTypeReturn(char * name) {
+struct print_ret * IntTypeReturn(char * name) {
   struct print_ret * res =
     (struct print_ret *) malloc (sizeof (struct print_ret));
-  res -> t = T_ORIG_TYPE_RETURN;
+  res -> t = T_INT_TYPE_RETURN;
   res -> d.name = name;
   return res;
 }
@@ -392,18 +285,39 @@ struct print_ret * FuncTypeReturn(struct var_decl_expr * e) {
   return res;
 }
 
+void print_decl_expr_type_list_as_argument_types(struct decl_expr_type_list * args) {
+  if (args == NULL) {
+    return;
+  }
+  print_spaces();
+  printf("Argument type:\n");
+  indent ++;
+  print_int();
+  print_annon_var_decl_expr(args -> e);
+  indent --;
+  print_decl_expr_type_list_as_argument_types(args -> next);
+}
+
+void print_expr_type_list_as_argument_types(struct expr_type_list * args) {
+  if (args == NULL) {
+    return;
+  }
+  print_spaces();
+  indent ++;
+  printf("Argument:\n");
+  print_expr(args -> e);
+  indent --;
+  print_expr_type_list_as_argument_types(args -> next);
+}
+
 struct print_ret * print_var_decl_expr_rec(struct var_decl_expr * e) {
   struct print_ret * res;
   switch (e -> t) {
-  case T_ORIG_TYPE:
-    return OrigTypeReturn(e -> d.ORIG_TYPE.name);
+  case T_INT_TYPE:
+    return IntTypeReturn(e -> d.INT_TYPE.name);
   case T_PTR_TYPE:
     res = print_var_decl_expr_rec(e -> d.PTR_TYPE.base);
     printf("pointer of ");
-    return res;
-  case T_ARRAY_TYPE:
-    res = print_var_decl_expr_rec(e -> d.ARRAY_TYPE.base);
-    printf("array[%d] of ", e -> d.ARRAY_TYPE.size);
     return res;
   case T_FUNC_TYPE:
     return FuncTypeReturn(e);
@@ -414,7 +328,7 @@ char * print_var_decl_expr_rec2(struct var_decl_expr * e) {
   struct print_ret * r = print_var_decl_expr_rec(e);
   char * res;
   switch (r -> t) {
-  case T_ORIG_TYPE_RETURN:
+  case T_INT_TYPE_RETURN:
     res = r -> d.name;
     printf("the LHS type\n");
     free(r);
@@ -425,35 +339,11 @@ char * print_var_decl_expr_rec2(struct var_decl_expr * e) {
     print_spaces();
     printf("Return type: ");
     res = print_var_decl_expr_rec2(r -> d.e -> d.FUNC_TYPE.ret);
-    print_type_list_as_argument_types(r -> d.e -> d.FUNC_TYPE.args);
+    print_decl_expr_type_list_as_argument_types(r -> d.e -> d.FUNC_TYPE.args);
     indent --;
     free(r);
     return res;
   }
-}
-
-void print_var_decl_expr_for_var(struct var_decl_expr * e) {
-  print_spaces();
-  printf("Right type: ");
-  char * name = print_var_decl_expr_rec2(e);
-  print_spaces();
-  printf("Var name: %s\n", name);
-}
-
-void print_var_decl_expr_for_field(struct var_decl_expr * e) {
-  print_spaces();
-  printf("Right type: ");
-  char * name = print_var_decl_expr_rec2(e);
-  print_spaces();
-  printf("Field name: %s\n", name);
-}
-
-void print_var_decl_expr_for_typedef(struct var_decl_expr * e) {
-  print_spaces();
-  printf("Right type: ");
-  char * name = print_var_decl_expr_rec2(e);
-  print_spaces();
-  printf("Type name: %s\n", name);
 }
 
 void print_annon_var_decl_expr(struct var_decl_expr * e) {
@@ -462,56 +352,207 @@ void print_annon_var_decl_expr(struct var_decl_expr * e) {
   char * name = print_var_decl_expr_rec2(e);
 }
 
-void print_glob_item(struct glob_item * g) {
-  switch (g -> t) {
-  case T_STRUCT_DEF:
-    printf("struct definition: %s\n", g -> d.STRUCT_DEF.name);
-    indent ++;
-    print_type_list_as_fields(g -> d.STRUCT_DEF.fld);
-    indent --;
-    return;
-  case T_STRUCT_DECL:
-    printf("struct declaration: %s\n", g -> d.STRUCT_DECL.name);
-    return;
-  case T_UNION_DEF:
-    printf("union definition: %s\n", g -> d.UNION_DEF.name);
-    indent ++;
-    print_type_list_as_fields(g -> d.UNION_DEF.fld);
-    indent --;
-    return;
-  case T_UNION_DECL:
-    printf("union declaration: %s\n", g -> d.UNION_DECL.name);
-    return;
-  case T_ENUM_DEF:
-    printf("enum definition: %s (", g -> d.ENUM_DEF.name);
-    print_enum_ele_list(g -> d.ENUM_DEF.ele);
-    printf(" )\n");
-    return;
-  case T_ENUM_DECL:
-    printf("enum declaration: %s\n", g -> d.ENUM_DECL.name);
-    return;
-  case T_TYPE_DEF:
-    printf("typedef:\n");
-    indent ++;
-    print_left_type(g -> d.TYPE_DEF.t);
-    print_var_decl_expr_for_typedef(g -> d.TYPE_DEF.e);
-    indent --;
-    return;
-  case T_VAR_DEF:
-    printf("var definition:\n");
-    indent ++;
-    print_left_type(g -> d.VAR_DEF.t);
-    print_var_decl_expr_for_var(g -> d.VAR_DEF.e);
-    indent --;
-    return;
+void print_var_decl_expr(struct var_decl_expr * e) {
+  print_spaces();
+  printf("Right type: ");
+  char * name = print_var_decl_expr_rec2(e);
+  print_spaces();
+  printf("Var name: %s\n", name);
+}
+
+void print_binop(enum BinOpType op) {
+  switch (op) {
+  case T_PLUS:
+    printf("PLUS");
+    break;
+  case T_MINUS:
+    printf("MINUS");
+    break;
+  case T_MUL:
+    printf("MUL");
+    break;
+  case T_DIV:
+    printf("DIV");
+    break;
+  case T_MOD:
+    printf("MOD");
+    break;
+  case T_LT:
+    printf("LT");
+    break;
+  case T_GT:
+    printf("GT");
+    break;
+  case T_LE:
+    printf("LE");
+    break;
+  case T_GE:
+    printf("GE");
+    break;
+  case T_EQ:
+    printf("EQ");
+    break;
+  case T_NE:
+    printf("NE");
+    break;
+  case T_AND:
+    printf("AND");
+    break;
+  case T_OR:
+    printf("OR");
+    break;
   }
 }
 
-void print_glob_item_list(struct glob_item_list * gs) {
-  if (gs == NULL) {
-    return;
+void print_unop(enum UnOpType op) {
+  switch (op) {
+  case T_UMINUS:
+    printf("UMINUS");
+    break;
+  case T_NOT:
+    printf("NOT");
+    break;
   }
-  print_glob_item(gs -> data);
-  print_glob_item_list(gs -> next);
+}
+
+void print_expr(struct expr * e) {
+  switch (e -> t) {
+  case T_CONST:
+    printf("CONST(%d)", e -> d.CONST.value);
+    break;
+  case T_VAR:
+    printf("VAR(%s)", e -> d.VAR.name);
+    break;
+  case T_BINOP:
+    print_binop(e -> d.BINOP.op);
+    printf("(");
+    print_expr(e -> d.BINOP.left);
+    printf(",");
+    print_expr(e -> d.BINOP.right);
+    printf(")");
+    break;
+  case T_UNOP:
+    print_unop(e -> d.UNOP.op);
+    printf("(");
+    print_expr(e -> d.UNOP.arg);
+    printf(")");
+    break;
+  case T_DEREF:
+    printf("DEREF(");
+    print_expr(e -> d.DEREF.arg);
+    printf(")");
+    break;
+  case T_ADDROF:
+    printf("ADDROF(");
+    print_expr(e -> d.ADDROF.arg);
+    printf(")");
+    break;  
+  case T_FUNC:
+    printf("FUNC(");
+    print_expr(e -> d.FUNC.func);
+    printf(",");
+    print_expr_type_list_as_argument_types(e -> d.FUNC.args);
+    printf(")");
+    break;
+  }
+}
+
+void print_cmd(struct cmd * c) {
+  switch (c -> t) {
+  case T_DECL:
+    printf("DECL(");
+    print_int();
+    print_var_decl_expr(c -> d.DECL.right);
+    printf(")");
+    break;
+  case T_ASGN:
+    printf("ASGN(");
+    print_expr(c -> d.ASGN.left);
+    printf(",");
+    print_expr(c -> d.ASGN.right);
+    printf(")");
+    break;
+  case T_SEQ:
+    printf("SEQ(");
+    print_cmd(c -> d.SEQ.left);
+    printf(",");
+    print_cmd(c -> d.SEQ.right);
+    printf(")");
+    break;
+  case T_IF:
+    printf("IF(");
+    print_expr(c -> d.IF.cond);
+    printf(",");
+    print_cmd(c -> d.IF.left);
+    printf(",");
+    print_cmd(c -> d.IF.right);
+    printf(")");
+    break;
+  case T_WHILEDO:
+    printf("WHILEDO(");
+    print_expr(c -> d.WHILEDO.cond);
+    printf(",");
+    print_cmd(c -> d.WHILEDO.body);
+    printf(")");
+    break;
+  case T_DOWHILE:
+    printf("DOWHILE(");
+    print_cmd(c -> d.DOWHILE.body);
+    printf(",");
+    print_expr(c -> d.DOWHILE.cond);
+    printf(")");
+    break;
+  case T_FOR:
+    printf("FOR(");
+    print_cmd(c -> d.FOR.init);
+    printf(",");
+    print_expr(c -> d.FOR.cond);
+    printf(",");
+    print_cmd(c -> d.FOR.nxt);
+    printf(",");
+    print_cmd(c -> d.FOR.body);
+    printf(")");
+    break;
+  case T_LOCAL:
+    printf("LOCAL(");
+    printf("%s", &c -> d.LOCAL.var);
+    printf(",");
+    print_cmd(c -> d.LOCAL.body);
+    printf(")");
+    break;
+  case T_PROC:
+    printf("PROC(");
+    print_expr(c -> d.PROC.proc);
+    printf(",");
+    print_expr_type_list_as_argument_types(c -> d.PROC.args);
+    printf(")");
+    break;
+  }
+}
+
+unsigned int build_nat(char * c, int len) {
+  int s = 0, i = 0;
+  for (i = 0; i < len; ++i) {
+    if (s > 429496729) {
+      printf("We cannot handle natural numbers greater than 4294967295.\n");
+      exit(0);
+    }
+    if (s == 429496729 && c[i] > '5') {
+      printf("We cannot handle natural numbers greater than 4294967295.\n");
+      exit(0);
+    }
+    s = s * 10 + (c[i] - '0');
+  }
+  return s;
+}
+
+char * new_str(char * str, int len) {
+  char * res = (char *) malloc(sizeof(char) * (len + 1));
+  if (res == NULL) {
+    printf("Failure in malloc.\n");
+    exit(0);
+  }
+  strcpy(res, str);
+  return res;
 }
 
