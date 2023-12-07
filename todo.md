@@ -50,7 +50,39 @@ int expr(args){
 - [ ] 什么是类型检查? 比如 `template <typename T> int (* f)(T,C);` 是不是合法的，类型检查是不是这个
 
 - [ ] 函数进行实例化的时候，c++中可以省略实例化参数交由编译器自行判断，这个怎么说。
+```cpp
+template<typename T,typename C> T max(T a, T b,C c=0){
+    return a?a>b:b;
+} 
+
+//调用
+max<int,int>(10,20,10);
+max<int>(10,20,10);
+max(10,20,10)
+```
 
 - [ ] 形如`template <> int a;`是否需要特判中空。目前已特判
 
 - [ ] 目前的想法有点赘余，记录在note.md中，有没有董哥优化一下？
+
+### 类型检查:
+
+- [ ] 如下
+
+```cpp
+//没有template，单纯无限递归，不也会导致程序无法终止？不是很理解
+template <typename T> T sjtu(T a){
+	sjtu<T *>(&a);
+}
+
+int sjtu(int a);
+int * sjtu(int * a);
+int ** sjtu
+int ****
+ ******
+*********
+
+int sjtu(int a){
+    sjtu(a);
+}
+```
