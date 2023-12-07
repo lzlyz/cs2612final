@@ -36,7 +36,7 @@ clean:
 	rm lexer.o
 	rm main.o
 	rm parser.o 
-	rm main.exe
+	rm main
 
 %.c: %.y
 
