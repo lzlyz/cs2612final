@@ -94,16 +94,11 @@ struct expr_type_list {
   struct expr_type_list * next;
 };
 
-struct typename_list {
-  char * name;
-  struct typename_list * next;
-};
-
 struct cmd {
   enum CmdType t;
   union {
     struct {struct var_decl_expr * right; } DECL;
-    struct {struct typename_list * typenames; struct var_decl_expr * right; } TEMPLATEDECL;
+    struct {char * typename; struct var_decl_expr * right; } TEMPLATEDECL;
     struct {struct expr * left; struct expr * right; } ASGN;
     struct {struct cmd * left; struct cmd * right; } SEQ;
     struct {struct expr * cond; struct cmd * left; struct cmd * right; } IF;
@@ -124,8 +119,6 @@ struct decl_expr_type_list * TDETLNil();
 struct decl_expr_type_list * TDETLCons(struct var_decl_expr * e, struct decl_expr_type_list * next);
 struct expr_type_list * TETLNil();
 struct expr_type_list * TETLCons(struct expr * e, struct expr_type_list * next);
-struct typename_list * TTLNil();
-struct typename_list * TTLCons(char * name, struct typename_list * next) ;
 struct var_decl_expr * TIntType(char * name);
 struct var_decl_expr * TPtrType(struct var_decl_expr * base);
 struct var_decl_expr * TFuncType(struct var_decl_expr * ret, struct decl_expr_type_list * args);
@@ -137,7 +130,7 @@ struct expr * TDeref(struct expr * arg);
 struct expr * TAddrOf(struct expr * arg);
 struct expr * TFunc(struct expr * func, struct expr_type_list * args);
 struct cmd * TDecl(struct var_decl_expr * right);
-struct cmd * TTemplateDecl(struct typename_list * typenames, struct var_decl_expr * right);
+struct cmd * TTemplateDecl(char * typename, struct var_decl_expr * right);
 struct cmd * TAsgn(struct expr * left, struct expr * right);
 struct cmd * TSeq(struct cmd * left, struct cmd * right);
 struct cmd * TIf(struct expr * cond, struct cmd * left, struct cmd * right);

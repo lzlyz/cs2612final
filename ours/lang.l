@@ -20,6 +20,10 @@
     return TM_INTTYPE;
 }
 
+"void" {
+    return TM_VOID;
+}
+
 "if" {
     return TM_IF;
 }

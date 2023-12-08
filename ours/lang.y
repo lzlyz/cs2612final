@@ -16,7 +16,6 @@ struct cmd * c;
 struct decl_expr_type_list * detl;
 struct expr_type_list * etl;
 struct var_decl_expr * vde;
-struct typename_list * tl;
 void * none;
 }
 
@@ -26,7 +25,7 @@ void * none;
 %token <none> TM_LEFT_BRACE TM_RIGHT_BRACE
 %token <none> TM_LEFT_PAREN TM_RIGHT_PAREN
 %token <none> TM_SEMICOL TM_COMMA
-%token <none> TM_VAR TM_INTTYPE TM_IF TM_THEN TM_ELSE TM_WHILE TM_DO
+%token <none> TM_VAR TM_INTTYPE TM_VOID TM_IF TM_THEN TM_ELSE TM_WHILE TM_DO
 %token <none> TM_FOR TM_LOCAL TM_IN TM_CONTINUE TM_BREAK TM_RETURN TM_SKIP
 %token <none> TM_ASGNOP
 %token <none> TM_OR
@@ -48,7 +47,6 @@ void * none;
 %type <detl> NT_DECL_ARGUMENT_TYPE_LIST
 %type <vde> NT_DECL_RIGHT_EXPR
 %type <vde> NT_ANNON_RIGHT_EXPR
-%type <tl> NT_TYPENAME_LIST
 
 // Priority
 %nonassoc TM_ASGNOP TM_INTTYPE TM_VAR TM_IF TM_THEN TM_ELSE TM_WHILE TM_DO TM_FOR TM_LOCAL TM_IN TM_SKIP TM_CONTINUE TM_BREAK TM_RETURN TM_TEMPLATE TM_TYPENAME  
@@ -83,14 +81,10 @@ NT_CMD:
   {
     $$ = (TDecl($3));
   }
-/* | TM_TEMPLATE TM_LT TM_GT TM_VAR TM_INTTYPE NT_DECL_RIGHT_EXPR
+| TM_TEMPLATE TM_LT TM_TYPENAME TM_IDENT TM_GT TM_VAR TM_INTTYPE NT_DECL_RIGHT_EXPR
   {
-    $$ = (TTemplateDecl(TTLNil(),$6));
+    $$ = (TTemplateDecl($4,$8));
   }
-| TM_TEMPLATE TM_LT NT_TYPENAME_LIST TM_GT TM_VAR TM_INTTYPE NT_DECL_RIGHT_EXPR
-  {
-    $$ = (TTemplateDecl($3,$7));
-  } */
 | NT_EXPR TM_ASGNOP NT_EXPR
   {
     $$ = (TAsgn($1,$3));
@@ -331,18 +325,6 @@ NT_EXPR_TYPE_LIST:
 	  $$ = TETLCons($1, TETLNil()) ; 
   }
 ;
-
-NT_TYPENAME_LIST:
-  TM_TYPENAME TM_IDENT TM_COMMA NT_TYPENAME_LIST
-  {
-	  $$ = TTLCons($2, $4); 
-  }
-| TM_TYPENAME TM_IDENT
-  {
-	  $$ = TTLCons($2, TETLNil()) ; 
-  }
-;
-
 
 %%
 

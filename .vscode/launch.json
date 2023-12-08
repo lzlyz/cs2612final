@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/ALIENWARE/Desktop/cs2612final/ours",
-      "program": "c:/Users/ALIENWARE/Desktop/cs2612final/ours/build/Debug/outDebug",
+      "cwd": "c:/Users/ALIENWARE/Desktop/graph2",
+      "program": "c:/Users/ALIENWARE/Desktop/graph2/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
