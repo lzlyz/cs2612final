@@ -40,6 +40,7 @@ void * none;
 // Nonterminals
 %type <c> NT_WHOLE
 %type <c> NT_CMD
+%type <c> NT_FOR_CMD
 %type <e> NT_EXPR0
 %type <e> NT_EXPR1
 %type <e> NT_EXPR
@@ -101,7 +102,66 @@ NT_CMD:
   {
     $$ = (TDoWhile($3,$7));
   }
-| TM_FOR TM_LEFT_PAREN NT_CMD TM_SEMICOL NT_EXPR TM_SEMICOL NT_CMD TM_RIGHT_PAREN TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE // Warning, this cmd is not the correct cmd ,it need modify
+| TM_FOR TM_LEFT_PAREN NT_FOR_CMD TM_SEMICOL NT_EXPR TM_SEMICOL NT_FOR_CMD TM_RIGHT_PAREN TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE // Warning, this cmd is not the correct cmd ,it need modify
+  {
+    $$ = (TFor($3,$5,$7,$10));
+  }
+| TM_LOCAL TM_IDENT TM_IN TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE
+  {
+    $$ = (TLocal($2,$5));
+  }
+| TM_CONTINUE
+  {
+    $$ = (TContinue());
+  }
+| TM_SKIP
+  {
+    $$ = (TSkip());
+  }
+| TM_BREAK
+  {
+    $$ = (TBreak());
+  }
+| TM_RETURN
+  {
+    $$ = (TReturn());
+  }
+| NT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
+  {
+    $$ = (TProc($1,TETLNil()));
+  }
+| NT_EXPR TM_LEFT_PAREN NT_EXPR_TYPE_LIST TM_RIGHT_PAREN
+  {
+    $$ = (TProc($1,$3));
+  }
+;
+
+NT_FOR_CMD:
+TM_VAR TM_INTTYPE NT_DECL_RIGHT_EXPR
+  {
+    $$ = (TDecl($3));
+  }
+| TM_TEMPLATE TM_LT TM_TYPENAME TM_IDENT TM_GT TM_VAR TM_INTTYPE NT_DECL_RIGHT_EXPR
+  {
+    $$ = (TTemplateDecl($4,$8));
+  }
+| NT_EXPR TM_ASGNOP NT_EXPR
+  {
+    $$ = (TAsgn($1,$3));
+  }
+| TM_IF NT_EXPR TM_THEN TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE TM_ELSE TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE
+  {
+    $$ = (TIf($2,$5,$9));
+  }
+| TM_WHILE TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN TM_DO TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE
+  {
+    $$ = (TWhileDo($3,$7));
+  }
+| TM_DO TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE TM_WHILE TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN
+  {
+    $$ = (TDoWhile($3,$7));
+  }
+| TM_FOR TM_LEFT_PAREN NT_FOR_CMD TM_SEMICOL NT_EXPR TM_SEMICOL NT_FOR_CMD TM_RIGHT_PAREN TM_LEFT_BRACE NT_CMD TM_RIGHT_BRACE // Warning, this cmd is not the correct cmd ,it need modify
   {
     $$ = (TFor($3,$5,$7,$10));
   }
