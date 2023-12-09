@@ -541,6 +541,18 @@ void print_cmd(struct cmd * c) {
     print_expr_type_list_as_argument_types(c -> d.PROC.args);
     printf(")");
     break;
+  case T_BREAK:
+    printf("BREAK");
+    break;
+  case T_CONTINUE:
+    printf("CONTINUE");
+    break;
+  case T_SKIP:
+    printf("SKIP");
+    break;
+  case T_RETURN:
+    printf("RETURN");
+    break;
   }
 }
 

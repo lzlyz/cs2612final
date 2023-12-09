@@ -8,4 +8,5 @@ a = *b(1,2);
 skip;
 while( a < 10 ) do {var int b};
 local a in { a = 10 };
-for(a = 1; a < 10; a = a + 1) {a = 10}
+continue;
+break
