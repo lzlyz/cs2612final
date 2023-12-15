@@ -55,8 +55,9 @@ struct decl_expr_type_list * TDETLNil() {
   return NULL;
 }
 
-struct decl_expr_type_list * TDETLCons(struct var_decl_expr * e, struct decl_expr_type_list * next) {
+struct decl_expr_type_list * TDETLCons(char * typename, struct var_decl_expr * e, struct decl_expr_type_list * next) {
   struct decl_expr_type_list * res = new_decl_expr_type_list_ptr();
+  res -> typename = typename;
   res -> e = e;
   res -> next = next;
   return res;
@@ -148,18 +149,29 @@ struct expr * TFunc(struct expr * func, struct expr_type_list * args) {
   return res;
 }
 
-struct cmd * TDecl(struct var_decl_expr * right) {
+struct cmd * TDecl(char * typename, struct var_decl_expr * right) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_DECL;
+  res -> d.DECL.typename = typename;
   res -> d.DECL.right = right;
   return res;
 }
 
-struct cmd * TTemplateDecl(char * typename, struct var_decl_expr * right){
+struct cmd * TFuncDecl(char * typename, struct var_decl_expr * right, struct cmd * body){
   struct cmd * res = new_cmd_ptr();
-  res -> t = T_TEMPLATEDECL;
-  res -> d.TEMPLATEDECL.typename = typename;
-  res -> d.TEMPLATEDECL.right = right;
+  res -> t = T_FUNCDECL;
+  res -> d.FUNCDECL.typename = typename;
+  res -> d.FUNCDECL.right = right;
+  res -> d.FUNCDECL.body = body;
+  return res;
+}
+
+struct cmd * TProcDecl(char * typename, struct var_decl_expr * right, struct cmd * body){
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_PROCDECL;
+  res -> d.PROCDECL.typename = typename;
+  res -> d.PROCDECL.right = right;
+  res -> d.PROCDECL.body = body;
   return res;
 }
 
@@ -207,9 +219,9 @@ struct cmd * TDoWhile(struct cmd * body, struct expr * cond) {
 struct cmd * TFor(struct cmd * init, struct expr * cond, struct cmd * nxt, struct cmd * body) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_FOR;
-  res -> d.FOR.body = init;
+  res -> d.FOR.init = init;
   res -> d.FOR.cond = cond;
-  res -> d.FOR.body = nxt;
+  res -> d.FOR.nxt = nxt;
   res -> d.FOR.body = body;
   return res;
 }
@@ -252,6 +264,51 @@ struct cmd * TProc(struct expr * func, struct expr_type_list * args) {
   res -> d.PROC.proc = func;
   res -> d.PROC.args = args;
   return res;
+}
+
+char * TEMPLATE_TYPENAME="";
+void set_template_typename(char * typename){
+  TEMPLATE_TYPENAME=typename;
+}
+char * get_template_typename(){
+  return TEMPLATE_TYPENAME;
+}
+
+int validate_typename_char(char * additional_typename, char * type){
+  if(!strcmp(additional_typename,type)||!strcmp("int",type)) return 1;
+  else return 0;
+}
+
+int validate_typename_vdel(char * additional_typename, struct decl_expr_type_list * elist){
+  if(elist->next==NULL) return 1;
+  if(!validate_typename_vde(additional_typename,elist->e)) return 0;
+  return validate_typename_char(additional_typename,elist->typename)&&validate_typename_vdel(additional_typename,elist->next);
+}
+
+int validate_typename_vde(char * additional_typename, struct var_decl_expr * e){
+  switch (e -> t) {
+  case T_INT_TYPE:
+    return 1;
+  case T_PTR_TYPE:
+    return validate_typename_vde(additional_typename, e -> d.PTR_TYPE.base);
+  case T_FUNC_TYPE:
+    if(!validate_typename_vdel(additional_typename, e->d.FUNC_TYPE.args)) return 0;
+    else return validate_typename_vde(additional_typename, e -> d.FUNC_TYPE.ret);
+  };
+}
+
+int validate_typename_cmd(char * additional_typename, struct cmd * c){
+  switch(c -> t) {
+  case T_DECL:
+    if(!validate_typename_char(additional_typename,c -> d.DECL.typename)) return 0;
+    else return validate_typename_vde(additional_typename,c -> d.DECL.right);
+    break;
+  case T_SEQ:
+    if(!validate_typename_cmd(additional_typename,c -> d.SEQ.left)) return 0;
+    else return validate_typename_cmd(additional_typename,c -> d.SEQ.left);
+  default:
+    return 1;
+  }
 }
 
 

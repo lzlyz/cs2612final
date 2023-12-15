@@ -90,3 +90,26 @@ int sjtu(int a){
     sjtu(a);
 }
 ```
+
+- [] 及其弱智的一个 R/R冲突：
+有
+expr
+
+expr < IDENT > ( IDEN)
+
+
+expr < expr > expr
+
+
+expr < NT_TYPENAME annoy_right_expr > (args);
+
+NT_INT,TM_TYPE_NAME
+
+(* a)(int, int *);
+
+func int (*a(int a,int b ,int c))(int,int)
+
+template <typename C> func int a(T b, T c);
+
+complex_decl_expr_list
+-> annoy, named

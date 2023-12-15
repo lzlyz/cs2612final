@@ -37,7 +37,8 @@ enum ExprType {
 
 enum CmdType {
   T_DECL = 0,
-  T_TEMPLATEDECL,
+  T_FUNCDECL,
+  T_PROCDECL,
   T_ASGN,
   T_SEQ,
   T_IF,
@@ -70,6 +71,7 @@ struct var_decl_expr {
 };
 
 struct decl_expr_type_list {
+  char * typename;
   struct var_decl_expr * e;
   struct decl_expr_type_list * next;
 };
@@ -97,8 +99,9 @@ struct expr_type_list {
 struct cmd {
   enum CmdType t;
   union {
-    struct {struct var_decl_expr * right; } DECL;
-    struct {char * typename; struct var_decl_expr * right; } TEMPLATEDECL;
+    struct {char * typename; struct var_decl_expr * right; } DECL;
+    struct {char * typename; struct var_decl_expr * right; struct cmd * body; } FUNCDECL;
+    struct {char * typename; struct var_decl_expr * right; struct cmd * body; } PROCDECL;
     struct {struct expr * left; struct expr * right; } ASGN;
     struct {struct cmd * left; struct cmd * right; } SEQ;
     struct {struct expr * cond; struct cmd * left; struct cmd * right; } IF;
@@ -114,9 +117,8 @@ struct cmd {
   } d;
 };
 
-
 struct decl_expr_type_list * TDETLNil();
-struct decl_expr_type_list * TDETLCons(struct var_decl_expr * e, struct decl_expr_type_list * next);
+struct decl_expr_type_list * TDETLCons(char * typename, struct var_decl_expr * e, struct decl_expr_type_list * next);
 struct expr_type_list * TETLNil();
 struct expr_type_list * TETLCons(struct expr * e, struct expr_type_list * next);
 struct var_decl_expr * TIntType(char * name);
@@ -129,8 +131,9 @@ struct expr * TUnOp(enum UnOpType op, struct expr * arg);
 struct expr * TDeref(struct expr * arg);
 struct expr * TAddrOf(struct expr * arg);
 struct expr * TFunc(struct expr * func, struct expr_type_list * args);
-struct cmd * TDecl(struct var_decl_expr * right);
-struct cmd * TTemplateDecl(char * typename, struct var_decl_expr * right);
+struct cmd * TDecl(char * typename, struct var_decl_expr * right);
+struct cmd * TFuncDecl(char * typename, struct var_decl_expr * right, struct cmd * body);
+struct cmd * TProcDecl(char * typename, struct var_decl_expr * right, struct cmd * body);
 struct cmd * TAsgn(struct expr * left, struct expr * right);
 struct cmd * TSeq(struct cmd * left, struct cmd * right);
 struct cmd * TIf(struct expr * cond, struct cmd * left, struct cmd * right);
@@ -143,6 +146,13 @@ struct cmd * TContinue();
 struct cmd * TReturn();
 struct cmd * TSkip();
 struct cmd * TProc(struct expr * proc, struct expr_type_list * args);
+
+
+void set_template_typename(char * typename);
+char * get_template_typename();
+int validate_typename_char(char * additional_typename, char * type);
+int validate_typename_vde(char * additional_typename, struct var_decl_expr * vde);
+int validate_typename_cmd(char * additional_typename, struct cmd * vde);
 
 void print_binop(enum BinOpType op);
 void print_unop(enum UnOpType op);

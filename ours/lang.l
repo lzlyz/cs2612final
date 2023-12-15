@@ -16,6 +16,10 @@
     return TM_VAR;
 }
 
+"func" {
+    return TM_FUNC;
+}
+
 "int" {
     return TM_INTTYPE;
 }
@@ -82,6 +86,7 @@
 
 [_A-Za-z][_A-Za-z0-9]* {
     yylval.i = new_str(yytext, yyleng);
+    if(!strcmp(yytext,get_template_typename())) return TM_TYPE_NAME;
     return TM_IDENT;
 }
 
