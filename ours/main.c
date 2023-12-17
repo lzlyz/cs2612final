@@ -7,6 +7,7 @@ extern struct cmd * root;
 int yyparse();
 
 int main(int argc, char * * argv) {
+  init_global_vtable();
   if (argc == 1) {
     printf("Error, not enough arguments!\n");
     return 0;

@@ -1,1 +1,1 @@
-if (a > 10) then {a = 10} else {a = 20}
+var int (*(* a)(int * b))(int,int)

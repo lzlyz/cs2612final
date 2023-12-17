@@ -1,6 +1,9 @@
-template < typename T > func int a(int b,int c){
+template < typename T > func T a(int b,int c){
     var int b;
 };
-a<int>(1,2)
-
+a=a<int>(1,1);
+for(a=1;a>0;a=a+1){
+    var int b;
+    b = b + a
+}
 

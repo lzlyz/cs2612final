@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "lang.h"
+#include "dictionary.h"
 
 struct decl_expr_type_list * new_decl_expr_type_list_ptr() {
   struct decl_expr_type_list * res =
@@ -83,16 +84,50 @@ struct var_decl_expr * TIntType(char * name) {
 
 struct var_decl_expr * TPtrType(struct var_decl_expr * base) {
   struct var_decl_expr * res = new_var_decl_expr_ptr();
-  res -> t = T_PTR_TYPE;
-  res -> d.PTR_TYPE.base = base;
+  switch(base->t){
+  case T_INT_TYPE:
+    res -> t = T_PTR_TYPE;
+    res -> d.PTR_TYPE.base = base;
+    break;
+  case T_PTR_TYPE:
+    res -> t = T_PTR_TYPE;
+    res -> d.PTR_TYPE.base = TPtrType(base->d.PTR_TYPE.base);
+    free(base);
+    break;
+  case T_FUNC_TYPE:
+    res -> t = T_FUNC_TYPE;
+    res -> d.FUNC_TYPE.name = base->d.FUNC_TYPE.name;
+    res -> d.FUNC_TYPE.args = base->d.FUNC_TYPE.args;
+    res -> d.FUNC_TYPE.ret = TPtrType(base->d.FUNC_TYPE.ret);
+    free(base);
+    break;
+  }
   return res;
 }
 
-struct var_decl_expr * TFuncType(struct var_decl_expr * ret, struct decl_expr_type_list * args) {
+struct var_decl_expr * TFuncType(struct var_decl_expr * e, struct decl_expr_type_list * args) {
   struct var_decl_expr * res = new_var_decl_expr_ptr();
-  res -> t = T_FUNC_TYPE;
-  res -> d.FUNC_TYPE.ret = ret;
-  res -> d.FUNC_TYPE.args = args;
+  switch(e->t){
+  case T_INT_TYPE:
+    res -> t = T_FUNC_TYPE;
+    res -> d.FUNC_TYPE.name = e -> d.INT_TYPE.name;
+    res -> d.FUNC_TYPE.args = args;
+    res -> d.FUNC_TYPE.ret = TIntType("");
+    free(e);
+    break;
+  case T_PTR_TYPE:
+    res -> t = T_PTR_TYPE;
+    res -> d.PTR_TYPE.base = TFuncType(e -> d.PTR_TYPE.base, args);
+    free(e);
+    break;
+  case T_FUNC_TYPE:
+    res -> t = T_FUNC_TYPE;
+    res -> d.FUNC_TYPE.name = e -> d.FUNC_TYPE.name;
+    res -> d.FUNC_TYPE.args = e -> d.FUNC_TYPE.args;
+    res -> d.FUNC_TYPE.ret = TFuncType(e -> d.FUNC_TYPE.ret, args);
+    free(e);
+    break;
+  }
   return res;
 }
 
@@ -274,41 +309,143 @@ char * get_template_typename(){
   return TEMPLATE_TYPENAME;
 }
 
-int validate_typename_char(char * additional_typename, char * type){
-  if(!strcmp(additional_typename,type)||!strcmp("int",type)) return 1;
-  else return 0;
+// int validate_typename_char(char * additional_typename, char * type){
+//   if(!strcmp(additional_typename,type)||!strcmp("int",type)) return 1;
+//   else return 0;
+// }
+
+// int validate_typename_vdel(char * additional_typename, struct decl_expr_type_list * elist){
+//   if(elist->next==NULL) return 1;
+//   if(!validate_typename_vde(additional_typename,elist->e)) return 0;
+//   return validate_typename_char(additional_typename,elist->typename)&&validate_typename_vdel(additional_typename,elist->next);
+// }
+
+// int validate_typename_vde(char * additional_typename, struct var_decl_expr * e){
+//   switch (e -> t) {
+//   case T_INT_TYPE:
+//     return 1;
+//   case T_PTR_TYPE:
+//     return validate_typename_vde(additional_typename, e -> d.PTR_TYPE.base);
+//   case T_FUNC_TYPE:
+//     if(!validate_typename_vdel(additional_typename, e->d.FUNC_TYPE.args)) return 0;
+//     else return validate_typename_vde(additional_typename, e -> d.FUNC_TYPE.ret);
+//   };
+// }
+
+// int validate_typename_cmd(char * additional_typename, struct cmd * c){
+//   switch(c -> t) {
+//   case T_DECL:
+//     if(!validate_typename_char(additional_typename,c -> d.DECL.typename)) return 0;
+//     else return validate_typename_vde(additional_typename,c -> d.DECL.right);
+//     break;
+//   case T_SEQ:
+//     if(!validate_typename_cmd(additional_typename,c -> d.SEQ.left)) return 0;
+//     else return validate_typename_cmd(additional_typename,c -> d.SEQ.left);
+//   default:
+//     return 1;
+//   }
+// }
+
+struct var_type * new_var_type_ptr() {
+  struct var_type * res =
+    (struct var_type *) malloc(sizeof(struct var_type));
+  if (res == NULL) {
+    printf("Failure in malloc.\n");
+    exit(0);
+  }
+  return res;
 }
 
-int validate_typename_vdel(char * additional_typename, struct decl_expr_type_list * elist){
-  if(elist->next==NULL) return 1;
-  if(!validate_typename_vde(additional_typename,elist->e)) return 0;
-  return validate_typename_char(additional_typename,elist->typename)&&validate_typename_vdel(additional_typename,elist->next);
+struct var_type * TVarType(char * typename, struct var_decl_expr * vde){
+  struct var_type * res = new_var_type_ptr();
+  res -> typename = typename;
+  res -> vde = vde;
+  return res;
 }
 
-int validate_typename_vde(char * additional_typename, struct var_decl_expr * e){
+struct variable_table * new_vtable_ptr() {
+  struct variable_table * res =
+    (struct variable_table *) malloc(sizeof(struct variable_table));
+  if (res == NULL) {
+    printf("Failure in malloc.\n");
+    exit(0);
+  }
+  return res;
+}
+
+struct variable_table * TNewVtable(struct variable_table * father_vtable){
+  struct variable_table * res = new_vtable_ptr();
+  res -> vtable = dictionary_new(30);
+  res -> father_vtable= father_vtable;
+  return res;
+}
+
+
+// char * get_vde_name(struct var_decl_expr * e){
+//   switch (e -> t) {
+//   case T_INT_TYPE:
+//     return e -> d.INT_TYPE.name;
+//   case T_PTR_TYPE:
+//     return get_vde_name(e -> d.PTR_TYPE.base);
+//   case T_FUNC_TYPE:
+//     return get_vde_name(e -> d.FUNC_TYPE.ret);
+//   }
+// }
+
+char * get_vde_name(struct var_decl_expr * e){
   switch (e -> t) {
   case T_INT_TYPE:
-    return 1;
+    return e -> d.INT_TYPE.name;
   case T_PTR_TYPE:
-    return validate_typename_vde(additional_typename, e -> d.PTR_TYPE.base);
+    return get_vde_name(e -> d.PTR_TYPE.base);
   case T_FUNC_TYPE:
-    if(!validate_typename_vdel(additional_typename, e->d.FUNC_TYPE.args)) return 0;
-    else return validate_typename_vde(additional_typename, e -> d.FUNC_TYPE.ret);
-  };
+    return e -> d.FUNC_TYPE.name;
+  }
 }
 
-int validate_typename_cmd(char * additional_typename, struct cmd * c){
-  switch(c -> t) {
-  case T_DECL:
-    if(!validate_typename_char(additional_typename,c -> d.DECL.typename)) return 0;
-    else return validate_typename_vde(additional_typename,c -> d.DECL.right);
-    break;
-  case T_SEQ:
-    if(!validate_typename_cmd(additional_typename,c -> d.SEQ.left)) return 0;
-    else return validate_typename_cmd(additional_typename,c -> d.SEQ.left);
-  default:
-    return 1;
-  }
+struct variable_table * global_vtable;
+struct variable_table * now_vtable;
+
+void init_global_vtable(){
+  now_vtable = global_vtable = TNewVtable(NULL);
+}
+
+void init_new_now_vtable(){
+  now_vtable = TNewVtable(now_vtable);
+}
+
+void clear_now_vtable(){
+  struct variable_table * temp_vtable = now_vtable->father_vtable;
+  dictionary_del(now_vtable->vtable);
+  free(now_vtable);
+  now_vtable = temp_vtable;
+}
+
+struct variable_table * get_global_vtable(){
+  return global_vtable;
+}
+
+struct variable_table * get_now_vtable(){
+  return now_vtable;
+}
+
+void vtable_add(struct variable_table * vtable, char * left_typename, struct var_decl_expr * e){
+  dictionary_set(vtable->vtable, get_vde_name(e), TVarType(left_typename, e));
+}
+
+void vtable_del(struct variable_table * vtable, struct var_decl_expr * e){
+  dictionary_unset(vtable->vtable, get_vde_name(e));
+}
+
+struct var_type * vtable_find_vde(struct variable_table * vtable, struct var_decl_expr * e){
+  return vtable_find_char(vtable,get_vde_name(e));
+}
+
+struct var_type * vtable_find_char(struct variable_table * vtable, char * var_name){
+  if(vtable==NULL) return NULL;
+  struct var_type * res = dictionary_get(vtable->vtable, var_name,NULL);
+  if(res==NULL) return vtable_find_char(vtable->father_vtable,var_name);
+  else return res;
 }
 
 
@@ -321,39 +458,9 @@ void print_spaces() {
   }
 }
 
-void print_int(){
+void pprintf(char * s) {
   print_spaces();
-  printf("Left type: int\n");
-  return;
-}
-
-enum PrintRetType {
-  T_INT_TYPE_RETURN,
-  T_FUNC_TYPE_RETURN
-};
-
-struct print_ret {
-  enum PrintRetType t;
-  union {
-    char * name;
-    struct var_decl_expr * e;
-  } d;
-};
-
-struct print_ret * IntTypeReturn(char * name) {
-  struct print_ret * res =
-    (struct print_ret *) malloc (sizeof (struct print_ret));
-  res -> t = T_INT_TYPE_RETURN;
-  res -> d.name = name;
-  return res;
-}
-
-struct print_ret * FuncTypeReturn(struct var_decl_expr * e) {
-  struct print_ret * res =
-    (struct print_ret *) malloc (sizeof (struct print_ret));
-  res -> t = T_FUNC_TYPE_RETURN;
-  res -> d.e = e;
-  return res;
+  printf("%s",s);
 }
 
 void print_decl_expr_type_list_as_argument_types(struct decl_expr_type_list * args) {
@@ -363,8 +470,7 @@ void print_decl_expr_type_list_as_argument_types(struct decl_expr_type_list * ar
   print_spaces();
   printf("Argument type:\n");
   indent ++;
-  print_int();
-  print_annon_var_decl_expr(args -> e);
+  print_typename_vde(args->typename,args->e);
   indent --;
   print_decl_expr_type_list_as_argument_types(args -> next);
 }
@@ -381,54 +487,40 @@ void print_expr_type_list_as_argument_types(struct expr_type_list * args) {
   print_expr_type_list_as_argument_types(args -> next);
 }
 
-struct print_ret * print_var_decl_expr_rec(struct var_decl_expr * e) {
-  struct print_ret * res;
+char * print_vde(struct var_decl_expr * e) {
   switch (e -> t) {
   case T_INT_TYPE:
-    return IntTypeReturn(e -> d.INT_TYPE.name);
-  case T_PTR_TYPE:
-    res = print_var_decl_expr_rec(e -> d.PTR_TYPE.base);
-    printf("pointer of ");
-    return res;
-  case T_FUNC_TYPE:
-    return FuncTypeReturn(e);
-  }
-}
-
-char * print_var_decl_expr_rec2(struct var_decl_expr * e) {
-  struct print_ret * r = print_var_decl_expr_rec(e);
-  char * res;
-  switch (r -> t) {
-  case T_INT_TYPE_RETURN:
-    res = r -> d.name;
     printf("the LHS type\n");
-    free(r);
-    return res;
-  case T_FUNC_TYPE_RETURN:
-    printf("the following function type\n");
+    return e->d.INT_TYPE.name;
+  case T_PTR_TYPE:
+    printf("Pointer to ");
+    return print_vde(e->d.PTR_TYPE.base);
+  case T_FUNC_TYPE:
+    printf("Function of the following type\n");
     indent ++;
     print_spaces();
-    printf("Return type: ");
-    res = print_var_decl_expr_rec2(r -> d.e -> d.FUNC_TYPE.ret);
-    print_decl_expr_type_list_as_argument_types(r -> d.e -> d.FUNC_TYPE.args);
+    printf("Arguments:\n");
+    indent ++;
+    print_decl_expr_type_list_as_argument_types(e -> d.FUNC_TYPE.args);
     indent --;
-    free(r);
-    return res;
+    print_spaces();
+    printf("Return type: ");
+    print_vde(e->d.FUNC_TYPE.ret);
+    indent --;
+    return e -> d.FUNC_TYPE.name;
   }
 }
 
-void print_annon_var_decl_expr(struct var_decl_expr * e) {
+void print_typename_vde(char * typename,struct var_decl_expr * e) {
+  print_spaces();
+  printf("Left type: %s\n", typename);
   print_spaces();
   printf("Right type: ");
-  char * name = print_var_decl_expr_rec2(e);
-}
-
-void print_var_decl_expr(struct var_decl_expr * e) {
-  print_spaces();
-  printf("Right type: ");
-  char * name = print_var_decl_expr_rec2(e);
-  print_spaces();
-  printf("Var name: %s\n", name);
+  char * varname = print_vde(e);
+  if(strlen(varname)) {
+    print_spaces();
+    printf("Varname: %s\n",varname);
+  }
 }
 
 void print_binop(enum BinOpType op) {
@@ -531,84 +623,105 @@ void print_expr(struct expr * e) {
 void print_cmd(struct cmd * c) {
   switch (c -> t) {
   case T_DECL:
-    printf("DECL(");
-    print_int();
-    print_var_decl_expr(c -> d.DECL.right);
-    printf(")");
+    pprintf("Variable Declare:\n");
+    indent ++;
+    print_typename_vde(c -> d.DECL.typename, c -> d.DECL.right);
+    indent --;
     break;
   case T_ASGN:
-    printf("ASGN(");
+    pprintf("Assignment:\n");
+    indent ++;
+    pprintf("Left:");
     print_expr(c -> d.ASGN.left);
-    printf(",");
+    putchar('\n');
+    pprintf("Right:");
     print_expr(c -> d.ASGN.right);
-    printf(")");
+    putchar('\n');
+    indent --;
     break;
   case T_SEQ:
-    printf("SEQ(");
     print_cmd(c -> d.SEQ.left);
-    printf(",");
     print_cmd(c -> d.SEQ.right);
-    printf(")");
     break;
   case T_IF:
-    printf("IF(");
+    pprintf("If:\n");
+    indent ++;
+    pprintf("Condition:");
     print_expr(c -> d.IF.cond);
-    printf(",");
+    putchar('\n');
+    pprintf("Then:\n");
     print_cmd(c -> d.IF.left);
-    printf(",");
+    pprintf("Else:\n");
     print_cmd(c -> d.IF.right);
-    printf(")");
+    indent --;
     break;
   case T_WHILEDO:
-    printf("WHILEDO(");
+    pprintf("WhileDo:\n");
+    indent ++;
+    pprintf("Condition:");
     print_expr(c -> d.WHILEDO.cond);
-    printf(",");
+    putchar('\n');
+    pprintf("Body:");
     print_cmd(c -> d.WHILEDO.body);
-    printf(")");
+    putchar('\n');
+    indent --;
     break;
   case T_DOWHILE:
-    printf("DOWHILE(");
+    pprintf("DoWhile:\n");
+    indent ++;
+    pprintf("Body:\n");
     print_cmd(c -> d.DOWHILE.body);
-    printf(",");
+    pprintf("Condition:");
     print_expr(c -> d.DOWHILE.cond);
-    printf(")");
+    putchar('\n');
+    indent --;
     break;
   case T_FOR:
-    printf("FOR(");
+    pprintf("For:\n");
+    indent ++;
+    pprintf("Initilization:\n");
     print_cmd(c -> d.FOR.init);
-    printf(",");
+    pprintf("Condition:");
     print_expr(c -> d.FOR.cond);
-    printf(",");
+    putchar('\n');
+    pprintf("NextStep:\n");
     print_cmd(c -> d.FOR.nxt);
-    printf(",");
+    pprintf("Body:\n");
     print_cmd(c -> d.FOR.body);
-    printf(")");
+    putchar('\n');
+    indent --;
     break;
   case T_LOCAL:
-    printf("LOCAL(");
-    printf("%s", c -> d.LOCAL.var);
-    printf(",");
+    pprintf("Local:\n");
+    indent ++;
+    print_spaces();
+    printf("Variable:%s\n",c -> d.LOCAL.var);
+    pprintf("Body:\n");
     print_cmd(c -> d.LOCAL.body);
-    printf(")");
+    indent --;
     break;
   case T_PROC:
-    printf("PROC(");
+    pprintf("Process:\n");
+    indent ++;
+    pprintf("Process Head:");
     print_expr(c -> d.PROC.proc);
-    printf(",");
+    putchar('\n');
+    pprintf("Process Args:\n");
     print_expr_type_list_as_argument_types(c -> d.PROC.args);
-    printf(")");
+    putchar('\n');
+    indent --;
     break;
   case T_BREAK:
-    printf("BREAK");
+    pprintf("Break;\n");
     break;
   case T_CONTINUE:
-    printf("CONTINUE");
+    pprintf("Continue;\n");
     break;
   case T_SKIP:
-    printf("SKIP");
+    pprintf("Skip;\n");
     break;
   case T_RETURN:
-    printf("RETURN");
+    pprintf("Return;\n");
     break;
   }
 }

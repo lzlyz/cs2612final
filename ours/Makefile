@@ -10,7 +10,10 @@ parser.c: lang.y
 parser.h: lang.y
 	bison -o parser.c -d -v lang.y
 
-lang.o: lang.c lang.h
+dictionary.o: dictionary.c dictionary.h
+	gcc -c dictionary.c
+
+lang.o: lang.c lang.h dictionary.h
 	gcc -c lang.c
 
 parser.o: parser.c parser.h lexer.h lang.h
@@ -22,8 +25,8 @@ lexer.o: lexer.c lexer.h parser.h lang.h
 main.o: main.c lexer.h parser.h lang.h
 	gcc -c main.c
 
-main: lang.o parser.o lexer.o main.o
-	gcc lang.o parser.o lexer.o main.o -o main
+main: lang.o parser.o lexer.o dictionary.o main.o
+	gcc lang.o parser.o lexer.o dictionary.o main.o -o main
 
 all: main
 

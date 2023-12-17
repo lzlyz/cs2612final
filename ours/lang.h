@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "dictionary.h"
 
 enum BinOpType {
   T_PLUS,
@@ -66,7 +67,7 @@ struct var_decl_expr {
   union {
     struct { char * name; } INT_TYPE;
     struct { struct var_decl_expr * base; } PTR_TYPE;
-    struct { struct var_decl_expr * ret; struct decl_expr_type_list * args; } FUNC_TYPE;
+    struct { char * name; struct var_decl_expr * ret; struct decl_expr_type_list * args; } FUNC_TYPE;
   } d;
 };
 
@@ -117,6 +118,16 @@ struct cmd {
   } d;
 };
 
+struct var_type{
+  char * typename;
+  struct var_decl_expr * vde;
+};
+
+struct variable_table{
+  dictionary * vtable;
+  struct variable_table * father_vtable;
+};
+
 struct decl_expr_type_list * TDETLNil();
 struct decl_expr_type_list * TDETLCons(char * typename, struct var_decl_expr * e, struct decl_expr_type_list * next);
 struct expr_type_list * TETLNil();
@@ -146,18 +157,29 @@ struct cmd * TContinue();
 struct cmd * TReturn();
 struct cmd * TSkip();
 struct cmd * TProc(struct expr * proc, struct expr_type_list * args);
+struct var_type * TVarType(char * typename, struct var_decl_expr * vde);
 
 
+void init_global_vtable();
+void init_new_now_vtable();
+void clear_now_vtable();
+struct variable_table * get_global_vtable();
+struct variable_table * get_now_vtable();
+void vtable_add(struct variable_table * vtable, char * left_typename, struct var_decl_expr * e);
+void vtable_del(struct variable_table * vtable, struct var_decl_expr * e);
+struct var_type * vtable_find_vde(struct variable_table * vtable, struct var_decl_expr * e);
+struct var_type * vtable_find_char(struct variable_table * vtable, char * var_name);
 void set_template_typename(char * typename);
 char * get_template_typename();
-int validate_typename_char(char * additional_typename, char * type);
-int validate_typename_vde(char * additional_typename, struct var_decl_expr * vde);
-int validate_typename_cmd(char * additional_typename, struct cmd * vde);
+// int validate_typename_char(char * additional_typename, char * type);
+// int validate_typename_vde(char * additional_typename, struct var_decl_expr * vde);
+// int validate_typename_cmd(char * additional_typename, struct cmd * vde);
 
 void print_binop(enum BinOpType op);
 void print_unop(enum UnOpType op);
 void print_expr(struct expr * e);
-void print_var_decl_expr(struct var_decl_expr * e);
+char * print_vde(struct var_decl_expr * e);
+void print_typename_vde(char * varname, struct var_decl_expr * e);
 void print_annon_var_decl_expr(struct var_decl_expr * e);
 void print_cmd(struct cmd * c);
 

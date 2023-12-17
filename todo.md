@@ -113,3 +113,8 @@ template <typename C> func int a(T b, T c);
 
 complex_decl_expr_list
 -> annoy, named
+
+
+- [] 关于局部变量的处理
+我们建立一个字典链表，首先，在bison初始化一个全局字典，
+在FOR,WHILE,DOWHILE,FUNC语句的时候，创建子字典，指向父字典，查询时，逐步查询，创建时，优先在子创建，子查询。
