@@ -91,9 +91,8 @@
     if(strcmp(yytext,get_template_typename())==0) return TM_TYPE_NAME;
     struct var_type * res = vtable_find_char(get_now_vtable(),yytext);
     // printf("B%sB",yytext);
-    if(res == NULL) return TM_IDENT;
     // printf("C%sC\n",res->typename);
-    if(!strcmp(res -> typename,"void")) return TM_PROC_NAME;
+    if(res == NULL) return TM_IDENT;
     else return TM_VAR_NAME;
 }
 

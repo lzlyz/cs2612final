@@ -1,9 +1,9 @@
-template < typename T > func T a(int b,int c){
-    var int b;
+template < typename T > func T aaa(T b,int c){
+    aaa<T *>(&b,c);
 };
-a=a<int>(1,1);
-for(a=1;a>0;a=a+1){
-    var int b;
-    b = b + a
+
+func int main(){
+    var int c;
+    c = aaa<int>(c,c)
 }
 

@@ -102,7 +102,7 @@ unsigned int n;
 char * i;
 struct expr * e;
 struct cmd * c;
-struct decl_expr_type_list * detl;
+struct var_type_list * vtl;
 struct expr_type_list * etl;
 struct var_decl_expr * vde;
 struct var_type * vt;

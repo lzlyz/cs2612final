@@ -118,3 +118,43 @@ complex_decl_expr_list
 - [] 关于局部变量的处理
 我们建立一个字典链表，首先，在bison初始化一个全局字典，
 在FOR,WHILE,DOWHILE,FUNC语句的时候，创建子字典，指向父字典，查询时，逐步查询，创建时，优先在子创建，子查询。
+
+- [] 关于无限展开的副本
+对于模板函数 
+```cpp
+template <typename T> a(T b){
+    return a<T*>(&b);
+}
+```
+为了实现类型检查，模板函数在实例化，如a< int * >的时候，我们默认这个操作叫实例化，实例化的同时，会要求生成函数副本，将模板函数a中所有有关typename
+
+
+typename right_named_expr
+
+var_type:
+    typaname
+    
+template < typename T > func T aaa(T b,int c){
+    aaa<T *>(&b,c);
+};
+
+
+T-> T xxxx
+
+int aaa
+int * aaa
+int ********* aaa;
+
+fa
+
+fb
+
+fc
+
+
+fa<T>;
+
+Conclusion1: T不影响最终的函数副本结果，只跟函数原本的定义有关
+Conclusion1: T不影响最终的函数副本结果
+
+main-> fa<T> -> fb<T> -> (之前出现过的函数名)<T *> 爆了

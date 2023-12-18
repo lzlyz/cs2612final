@@ -13,7 +13,7 @@ unsigned int n;
 char * i;
 struct expr * e;
 struct cmd * c;
-struct decl_expr_type_list * detl;
+struct var_type_list * vtl;
 struct expr_type_list * etl;
 struct var_decl_expr * vde;
 struct var_type * vt;
@@ -36,7 +36,7 @@ void * none;
 %token <none> TM_PLUS TM_MINUS
 %token <none> TM_MUL TM_DIV TM_MOD
 %token <none> TM_UMINUS TM_DEREF TM_ADDROF
-%token <none> TM_TYPENAME TM_TEMPLATE TM_TYPE_NAME TM_VAR_NAME TM_PROC_NAME// TM_TYPENAME: typename TYPE_NAME: ->given another realisitc type name
+%token <none> TM_TYPENAME TM_TEMPLATE TM_TYPE_NAME TM_VAR_NAME// TM_TYPENAME: typename TYPE_NAME: ->given another realisitc type name
 
 // Nonterminals
 %type <c> NT_WHOLE
@@ -48,12 +48,12 @@ void * none;
 %type <e> NT_EXPR
 %type <etl> NT_EXPR_TYPE_LIST
 %type <vde> NT_NAMED_RIGHT_EXPR
-%type <detl> NT_COMPLEX_ARGUMENT_TYPE_LIST
+%type <vtl> NT_COMPLEX_ARGUMENT_TYPE_LIST
 %type <vde> NT_ANNON_RIGHT_EXPR
 %type <i> NT_TYPE_NAME
 %type <i> NT_TEMPLATE_HEAD
 
-%type <vt> NT_FUNC_HEAD NT_PROC_HEAD
+%type <vt> NT_FUNC_HEAD NT_PROC_HEAD NT_NAMED_HEAD NT_ANNON_HEAD
 %type <none> NT_FOR_HEAD NT_WHILE_HEAD NT_DO_HEAD NT_IF_HEAD NT_LOCAL_HEAD
 
 // Priority
@@ -85,38 +85,46 @@ NT_GLOBAL_CMD:
   {
     $$ = (TSeq($1,$3));
   }
-| TM_VAR NT_TYPE_NAME NT_NAMED_RIGHT_EXPR
+| TM_VAR NT_NAMED_HEAD
   {
-    vtable_add(get_now_vtable(), $2, $3);
-    $$ = (TDecl($2, $3));
+    $$ = (TDecl($2));
+    vtable_add(get_now_vtable(), $2);
   }
 | NT_FUNC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
   {
-    $$ = (TFuncDecl($1->typename,$1->vde,$3));
+    vtable_add_cmd(get_global_vtable(), $1, $3);
+    $$ = (TFuncDecl($1));
+    set_function_returntype(NULL);
     clear_now_vtable();
-
   }
 | NT_TEMPLATE_HEAD NT_FUNC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
   {
-    $$ = (TFuncDecl($2->typename,$2->vde,$4));
+    vtable_add_cmd(get_global_vtable(), $2, $4);
+    vtable_add_template(get_global_vtable(), $2, $1);
+    $$ = (TFuncDecl($2));
     set_template_typename("");
+    set_function_returntype(NULL);
     clear_now_vtable();
   }
 | NT_PROC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
   {
-    $$ = (TProcDecl($1->typename,$1->vde,$3));
+    vtable_add_cmd(get_global_vtable(), $1, $3);
+    $$ = (TProcDecl($1));
     clear_now_vtable();
   }
 | NT_TEMPLATE_HEAD NT_PROC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
   {
-    $$ = (TProcDecl($2->typename,$2->vde,$4));
+    
+    vtable_add_cmd(get_global_vtable(), $2, $4);
+    vtable_add_template(get_global_vtable(), $2, $1);
+    $$ = (TProcDecl($2));
     set_template_typename("");
     clear_now_vtable();
   }
-| NT_FOR_CMD
+/* | NT_FOR_CMD
   {
     $$ = $1
-  }
+  } */
 ;
 
 // LOCAL CMD 不能再使用函数定义
@@ -125,10 +133,10 @@ NT_LOCAL_CMD:
   {
     $$ = (TSeq($1,$3));
   }
-| TM_VAR NT_TYPE_NAME NT_NAMED_RIGHT_EXPR
+| TM_VAR NT_NAMED_HEAD
   {
-    vtable_add(get_now_vtable(), $2, $3);
-    $$ = (TDecl("int", $3));
+    $$ = (TDecl($2));
+    vtable_add(get_now_vtable(), $2);
   }
 | NT_FOR_CMD
   {
@@ -181,7 +189,11 @@ NT_FOR_CMD:
   }
 | TM_RETURN
   {
-    $$ = (TReturn());
+    $$ = (TReturn(NULL));
+  }
+| TM_RETURN NT_EXPR
+  {
+    $$ = (TReturn($2));
   }
 | NT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
   {
@@ -190,14 +202,6 @@ NT_FOR_CMD:
 | NT_EXPR TM_LEFT_PAREN NT_EXPR_TYPE_LIST TM_RIGHT_PAREN
   {
     $$ = (TProc($1,$3));
-  }
-| TM_PROC_NAME TM_LT NT_TYPE_NAME NT_ANNON_RIGHT_EXPR TM_GT TM_LEFT_PAREN TM_RIGHT_PAREN
-  {
-    $$ = (TProc($1,TETLNil()));
-  }
-| TM_PROC_NAME TM_LT NT_TYPE_NAME NT_ANNON_RIGHT_EXPR TM_GT TM_LEFT_PAREN NT_EXPR_TYPE_LIST TM_RIGHT_PAREN
-  {
-    $$ = (TProc($1,$7));
   }
 ;
 
@@ -254,13 +258,9 @@ NT_EXPR:
   {
     $$ = (TFunc($1,$3));
   }
-| NT_EXPR TM_LT NT_TYPE_NAME NT_ANNON_RIGHT_EXPR TM_GT TM_LEFT_PAREN TM_RIGHT_PAREN
+| NT_EXPR TM_LT NT_ANNON_HEAD TM_GT
   {
-    $$ = (TFunc($1,TETLNil()));
-  }
-| NT_EXPR TM_LT NT_TYPE_NAME NT_ANNON_RIGHT_EXPR TM_GT TM_LEFT_PAREN NT_EXPR_TYPE_LIST TM_RIGHT_PAREN
-  {
-    $$ = (TFunc($1,$7));
+    $$ = (TInstance($1,$3));
   }
 | NT_EXPR TM_MUL NT_EXPR
   {
@@ -320,59 +320,41 @@ NT_NAMED_RIGHT_EXPR:
   TM_IDENT
   {
 	$$ = TIntType($1);
-  // putchar('1');
-  // print_vde($$);
   }
 | TM_MUL NT_NAMED_RIGHT_EXPR
   {
 	$$ = TPtrType($2);
-  // putchar('2');
-  // print_vde($$);
   }
 | NT_NAMED_RIGHT_EXPR TM_LEFT_PAREN NT_COMPLEX_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {
   $$ = TFuncType($1, $3);
-  // putchar('3');
-  // print_vde($$);
   }
 | NT_NAMED_RIGHT_EXPR TM_LEFT_PAREN  TM_RIGHT_PAREN
   {
-	$$ = TFuncType($1,TDETLNil());
-  // putchar('4');
-  // print_vde($$);
+	$$ = TFuncType($1,TVTLNil());
   }
 | TM_LEFT_PAREN NT_NAMED_RIGHT_EXPR TM_RIGHT_PAREN
   {
 	$$ = ($2);
-  // putchar('5');
-  // print_vde($$);
   }
 ;
 
 NT_COMPLEX_ARGUMENT_TYPE_LIST:
-  NT_TYPE_NAME NT_NAMED_RIGHT_EXPR TM_COMMA NT_COMPLEX_ARGUMENT_TYPE_LIST
+  NT_NAMED_HEAD TM_COMMA NT_COMPLEX_ARGUMENT_TYPE_LIST
   {
-	  $$ = TDETLCons($1, $2, $4); 
+	  $$ = TVTLCons($1, $3); 
   }
-| NT_TYPE_NAME NT_NAMED_RIGHT_EXPR
+| NT_NAMED_HEAD
   {
-	  $$ = TDETLCons($1, $2, TDETLNil()) ; 
+	  $$ = TVTLCons($1, TVTLNil()) ; 
   }  
-| NT_TYPE_NAME NT_ANNON_RIGHT_EXPR TM_COMMA NT_COMPLEX_ARGUMENT_TYPE_LIST
+| NT_ANNON_HEAD TM_COMMA NT_COMPLEX_ARGUMENT_TYPE_LIST
   {
-	  $$ = TDETLCons($1, $2, $4); 
+	  $$ = TVTLCons($1, $3); 
   }
-| NT_TYPE_NAME NT_ANNON_RIGHT_EXPR
+| NT_ANNON_HEAD
   {
-	  $$ = TDETLCons($1, $2, TDETLNil()) ; 
-  }
-| NT_TYPE_NAME
-  {
-    $$ = TDETLCons($1, TIntType(""), TDETLNil()) ; 
-  }
-| NT_TYPE_NAME TM_COMMA NT_COMPLEX_ARGUMENT_TYPE_LIST
-  {
-    $$ = TDETLCons($1, TIntType(""), $3); 
+	  $$ = TVTLCons($1, TVTLNil()) ; 
   }
 ;
 
@@ -383,7 +365,7 @@ NT_ANNON_RIGHT_EXPR:
   }
 | TM_LEFT_PAREN TM_RIGHT_PAREN
   {
-    $$= TFuncType(TIntType(""), TDETLNil());
+    $$= TFuncType(TIntType(""), TVTLNil());
   }
 | TM_MUL NT_ANNON_RIGHT_EXPR
   {
@@ -391,7 +373,7 @@ NT_ANNON_RIGHT_EXPR:
   }
 | NT_ANNON_RIGHT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
   {
-    $$ = TFuncType($1 , TDETLNil());
+    $$ = TFuncType($1 , TVTLNil());
   }
 | NT_ANNON_RIGHT_EXPR TM_LEFT_PAREN NT_COMPLEX_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {
@@ -438,17 +420,29 @@ NT_TEMPLATE_HEAD:
 NT_FUNC_HEAD:
   TM_FUNC NT_TYPE_NAME NT_NAMED_RIGHT_EXPR
   {
-    vtable_add(get_now_vtable(), "void", $3);
+    if($3->t!=T_FUNC_TYPE){
+      yyerror("[Error] in Function Declare, not declare a function.");
+      exit(0);
+    }
+
     $$ = TVarType($2, $3);
+    vtable_add(get_global_vtable(), $$);
+
+    set_function_returntype(TVarType($2,$3->d.FUNC_TYPE.ret));
+
     init_new_now_vtable();
+    vtable_add_list(get_now_vtable(),get_vde_vtl($3));
   }
 
 NT_PROC_HEAD:
-  TM_FUNC TM_VOID NT_NAMED_RIGHT_EXPR
+  TM_FUNC TM_VOID TM_IDENT TM_LEFT_PAREN NT_COMPLEX_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {
-    vtable_add(get_now_vtable(), $2, $3);
-    $$ = TVarType($2, $3);
+    struct var_decl_expr * temp_vde_expr = TFuncType(TIntType($3), $5);
+    $$ = TVarType("void", temp_vde_expr);
+    vtable_add(get_now_vtable(), $$);
+
     init_new_now_vtable();
+    vtable_add_list(get_now_vtable(),$5);
   }
 
 NT_FOR_HEAD:
@@ -479,6 +473,22 @@ NT_LOCAL_HEAD:
   TM_LOCAL
   {
     init_new_now_vtable();
+  }
+
+NT_NAMED_HEAD:
+  NT_TYPE_NAME NT_NAMED_RIGHT_EXPR
+  {
+    $$ = TVarType($1,$2);
+  }
+
+NT_ANNON_HEAD:
+  NT_TYPE_NAME NT_ANNON_RIGHT_EXPR
+  {
+    $$ = TVarType($1,$2);
+  }
+| NT_TYPE_NAME 
+  {
+    $$ = TVarType($1,TIntType(""));
   }
 
 %%

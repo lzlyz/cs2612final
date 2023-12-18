@@ -4,9 +4,19 @@
 #include "lang.h"
 #include "dictionary.h"
 
-struct decl_expr_type_list * new_decl_expr_type_list_ptr() {
-  struct decl_expr_type_list * res =
-    (struct decl_expr_type_list *) malloc(sizeof(struct decl_expr_type_list));
+struct var_type * new_var_type_ptr() {
+  struct var_type * res =
+    (struct var_type *) malloc(sizeof(struct var_type));
+  if (res == NULL) {
+    printf("Failure in malloc.\n");
+    exit(0);
+  }
+  return res;
+}
+
+struct var_type_list * new_var_type_list_ptr() {
+  struct var_type_list * res =
+    (struct var_type_list *) malloc(sizeof(struct var_type_list));
   if (res == NULL) {
     printf("Failure in malloc.\n");
     exit(0);
@@ -52,14 +62,13 @@ struct cmd * new_cmd_ptr() {
   return res;
 }
 
-struct decl_expr_type_list * TDETLNil() {
+struct var_type_list * TVTLNil() {
   return NULL;
 }
 
-struct decl_expr_type_list * TDETLCons(char * typename, struct var_decl_expr * e, struct decl_expr_type_list * next) {
-  struct decl_expr_type_list * res = new_decl_expr_type_list_ptr();
-  res -> typename = typename;
-  res -> e = e;
+struct var_type_list * TVTLCons(struct var_type * vt, struct var_type_list * next) {
+  struct var_type_list * res = new_var_type_list_ptr();
+  res -> vt = vt;
   res -> next = next;
   return res;
 }
@@ -99,13 +108,15 @@ struct var_decl_expr * TPtrType(struct var_decl_expr * base) {
     res -> d.FUNC_TYPE.name = base->d.FUNC_TYPE.name;
     res -> d.FUNC_TYPE.args = base->d.FUNC_TYPE.args;
     res -> d.FUNC_TYPE.ret = TPtrType(base->d.FUNC_TYPE.ret);
+    res -> d.FUNC_TYPE.templatename = NULL;
+    res -> d.FUNC_TYPE.body = NULL;
     free(base);
     break;
   }
   return res;
 }
 
-struct var_decl_expr * TFuncType(struct var_decl_expr * e, struct decl_expr_type_list * args) {
+struct var_decl_expr * TFuncType(struct var_decl_expr * e, struct var_type_list * args) {
   struct var_decl_expr * res = new_var_decl_expr_ptr();
   switch(e->t){
   case T_INT_TYPE:
@@ -125,6 +136,8 @@ struct var_decl_expr * TFuncType(struct var_decl_expr * e, struct decl_expr_type
     res -> d.FUNC_TYPE.name = e -> d.FUNC_TYPE.name;
     res -> d.FUNC_TYPE.args = e -> d.FUNC_TYPE.args;
     res -> d.FUNC_TYPE.ret = TFuncType(e -> d.FUNC_TYPE.ret, args);
+    res -> d.FUNC_TYPE.templatename = NULL;
+    res -> d.FUNC_TYPE.body = NULL;
     free(e);
     break;
   }
@@ -135,6 +148,7 @@ struct expr * TConst(unsigned int value) {
   struct expr * res = new_expr_ptr();
   res -> t = T_CONST;
   res -> d.CONST.value = value;
+  res -> vt = TVarType("int",TIntType(""));
   return res;
 }
 
@@ -142,6 +156,7 @@ struct expr * TVar(char * name) {
   struct expr * res = new_expr_ptr();
   res -> t = T_VAR;
   res -> d.VAR.name = name;
+  res -> vt = vtable_find_char(get_now_vtable(),name);
   return res;
 }
 
@@ -151,6 +166,18 @@ struct expr * TBinOp(enum BinOpType op, struct expr * left, struct expr * right)
   res -> d.BINOP.op = op;
   res -> d.BINOP.left = left;
   res -> d.BINOP.right = right;
+  if(!vt_cmp(left->vt,right->vt)){
+    printf("[Error] Variable type unmatch in ");
+    print_binop(op);
+    printf("(");
+    print_expr(left);
+    printf(",");
+    print_expr(right);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
+  res -> vt = left -> vt;
   return res;
 }
 
@@ -159,6 +186,7 @@ struct expr * TUnOp(enum UnOpType op, struct expr * arg) {
   res -> t = T_UNOP;
   res -> d.UNOP.op = op;
   res -> d.UNOP.arg = arg;
+  res -> vt = arg -> vt;
   return res;
 }
 
@@ -166,6 +194,14 @@ struct expr * TDeref(struct expr * arg) {
   struct expr * res = new_expr_ptr();
   res -> t = T_DEREF;
   res -> d.DEREF.arg = arg;
+  if(arg -> vt -> vde -> t != T_PTR_TYPE){
+    printf("[Error] Variable type is not Pointer when Deref(");
+    print_expr(arg);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
+  res -> vt = TVarType(arg->vt->typename,arg->vt->vde->d.PTR_TYPE.base);
   return res;
 }
 
@@ -173,6 +209,81 @@ struct expr * TAddrOf(struct expr * arg) {
   struct expr * res = new_expr_ptr();
   res -> t = T_ADDROF;
   res -> d.ADDROF.arg = arg;
+  res -> vt = TVarType(arg->vt->typename,TPtrType(arg -> vt->vde));
+  return res;
+}
+
+
+struct var_decl_expr * template_expand_vde(struct var_type * expand, struct var_decl_expr* vde, char * template_typename,int ifexpand){
+  struct var_decl_expr * res = new_var_decl_expr_ptr();
+  switch(vde->t){
+  case T_INT_TYPE:
+    if(ifexpand) res = expand->vde;
+    else res = vde;
+    return res;
+  case T_PTR_TYPE:
+    res->t=T_PTR_TYPE;
+    res->d.PTR_TYPE.base = template_expand_vde(expand, vde->d.PTR_TYPE.base,template_typename,ifexpand);
+    return res;
+  case T_FUNC_TYPE:
+    res->t=T_FUNC_TYPE;
+    res->d.FUNC_TYPE.args=template_expand_vtl(expand, vde->d.FUNC_TYPE.args, template_typename);
+    res->d.FUNC_TYPE.templatename=NULL;
+    res->d.FUNC_TYPE.ret=template_expand_vde(expand, vde->d.FUNC_TYPE.ret, template_typename, ifexpand);
+    res->d.FUNC_TYPE.name=vde->d.FUNC_TYPE.name;
+    res->d.FUNC_TYPE.body=vde->d.FUNC_TYPE.body; // TODO: fix body Typename expand
+    return res;
+  }
+}
+
+
+struct var_type * template_expand_vt(struct var_type * expand, struct var_type * vt, char * template_typename){
+  struct var_type * res = new_var_type_ptr();
+  int ifexpand = strcmp(vt->typename,template_typename)==0;
+  if(ifexpand){
+    res -> typename = expand->typename;
+  }
+  else{
+    res -> typename = vt->typename;
+  }
+  res -> vde = template_expand_vde(expand,vt->vde,template_typename,ifexpand);
+  return res;
+}
+
+struct var_type_list * template_expand_vtl(struct var_type * expand, struct var_type_list * vtl, char * template_typename){
+  if(vtl==NULL) return NULL;
+  struct var_type_list * res = new_var_type_list_ptr();
+  res -> vt = template_expand_vt(expand, vtl->vt, template_typename);
+  res -> next = template_expand_vtl(expand,vtl->next,template_typename);
+  return res;
+}
+
+struct expr * TInstance(struct expr * func, struct var_type * vt){
+  if(func -> vt -> vde -> t != T_FUNC_TYPE){
+    printf("[Error] Variable type is not Function when Instance(");
+    print_expr(func);
+    printf(",");
+    print_vartype(vt);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
+  if(func -> vt -> vde->d.FUNC_TYPE.templatename== NULL){
+    printf("[Error] Given function is not a template function when Induction(");
+    print_expr(func);
+    printf(",");
+    print_vartype(vt);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
+  struct expr * res = new_expr_ptr();
+  res -> t = T_INSTANCE;
+  res -> d.INSTANCE.func = func;
+  res -> d.INSTANCE.vt = vt;
+  res -> vt = template_expand_vt(vt,func->vt,func -> vt -> vde->d.FUNC_TYPE.templatename);
+  // print_vartype(func->vt);
+  // print_vartype(res->vt);
   return res;
 }
 
@@ -181,32 +292,56 @@ struct expr * TFunc(struct expr * func, struct expr_type_list * args) {
   res -> t = T_FUNC;
   res -> d.FUNC.func = func;
   res -> d.FUNC.args = args;
+  if(func -> vt -> vde -> t != T_FUNC_TYPE || strcmp(func->vt->typename,"void")==0){
+    printf("[Error] Variable type is not Function when Function(");
+    print_expr(func);
+    printf(",");
+    print_expr_type_list_as_argument_types(args);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
+  if(!etl_vtl_cmp(args,func->vt->vde->d.FUNC_TYPE.args)){
+    printf("[Error] Arguments not match in Function(");
+    print_expr(func);
+    printf(",");
+    print_expr_type_list_as_argument_types(args);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
+  // printf("%s",func -> vt -> typename);
+  // printf("WSND");
+  // print_vde(func -> vt -> vde);
+  // printf("WSND");
+  // print_vde(func -> vt -> vde -> d.FUNC_TYPE.ret);
+  // printf("WSND");
+  res -> vt = TVarType(func -> vt -> typename,func -> vt -> vde -> d.FUNC_TYPE.ret);
   return res;
 }
 
-struct cmd * TDecl(char * typename, struct var_decl_expr * right) {
+struct cmd * TDecl(struct var_type * vt) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_DECL;
-  res -> d.DECL.typename = typename;
-  res -> d.DECL.right = right;
+  if(vt->vde->t==T_FUNC_TYPE){
+    printf("[Error] in Variable or Pointer Declare, not declare a Pointer or Variable.");
+    exit(0);
+  }
+  res -> d.DECL.vt = vt;
   return res;
 }
 
-struct cmd * TFuncDecl(char * typename, struct var_decl_expr * right, struct cmd * body){
+struct cmd * TFuncDecl(struct var_type * vt){
   struct cmd * res = new_cmd_ptr();
   res -> t = T_FUNCDECL;
-  res -> d.FUNCDECL.typename = typename;
-  res -> d.FUNCDECL.right = right;
-  res -> d.FUNCDECL.body = body;
+  res -> d.FUNCDECL.vt = vt;
   return res;
 }
 
-struct cmd * TProcDecl(char * typename, struct var_decl_expr * right, struct cmd * body){
+struct cmd * TProcDecl(struct var_type * vt){
   struct cmd * res = new_cmd_ptr();
   res -> t = T_PROCDECL;
-  res -> d.PROCDECL.typename = typename;
-  res -> d.PROCDECL.right = right;
-  res -> d.PROCDECL.body = body;
+  res -> d.PROCDECL.vt = vt;
   return res;
 }
 
@@ -215,6 +350,16 @@ struct cmd * TAsgn(struct expr * left, struct expr * right) {
   res -> t = T_ASGN;
   res -> d.ASGN.left = left;
   res -> d.ASGN.right = right;
+  if(!vt_cmp(left->vt,right->vt)){
+    printf("[Error] Variable type unmatch in ");
+    printf("Assignment(");
+    print_expr(left);
+    printf(",");
+    print_expr(right);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
   return res;
 }
 
@@ -287,9 +432,18 @@ struct cmd * TBreak() {
   return res;
 }
 
-struct cmd * TReturn() {
+struct cmd * TReturn(struct expr * e) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_RETURN;
+  res -> d.RETURN.e = e;
+  if(!(get_function_returntype()==NULL&&e==NULL)&&!vt_cmp(e->vt,get_function_returntype())){
+    printf("[Error] Variable type unmatch in ");
+    printf("Return(");
+    print_expr(e);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
   return res;
 }
 
@@ -298,7 +452,53 @@ struct cmd * TProc(struct expr * func, struct expr_type_list * args) {
   res -> t = T_PROC;
   res -> d.PROC.proc = func;
   res -> d.PROC.args = args;
+  if(func -> vt -> vde -> t != T_FUNC_TYPE || strcmp(func -> vt -> typename,"void")){
+    printf("[Error] Variable type is not Function when Function(");
+    print_expr(func);
+    printf(",");
+    print_expr_type_list_as_argument_types(args);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
+  if(!etl_vtl_cmp(args,func->vt->vde->d.FUNC_TYPE.args)){
+    printf("[Error] Arguments not match in Process(");
+    print_expr(func);
+    printf(",");
+    print_expr_type_list_as_argument_types(args);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
   return res;
+}
+
+int vde_cmp(struct var_decl_expr * e1,struct var_decl_expr * e2){
+  if(e1->t!=e2->t) return 0;
+  switch(e1->t){
+  case T_INT_TYPE:
+    return 1;
+  case T_PTR_TYPE:
+    return vde_cmp(e1->d.PTR_TYPE.base,e2->d.PTR_TYPE.base);
+  case T_FUNC_TYPE:
+    return vtl_cmp(e1->d.FUNC_TYPE.args,e2->d.FUNC_TYPE.args)&&vde_cmp(e1->d.FUNC_TYPE.ret,e2->d.FUNC_TYPE.ret);
+  }
+}
+
+int vt_cmp(struct var_type * vt1, struct var_type * vt2){
+  return strcmp(vt1->typename,vt2->typename)==0&&vde_cmp(vt1->vde,vt2->vde);
+}
+
+int vtl_cmp(struct var_type_list * vtl1, struct var_type_list * vtl2){
+  if(vtl1==vtl2) return 1;
+  if(vtl1==NULL||vtl2==NULL) return 0;
+  return vt_cmp(vtl1->vt,vtl2->vt)&&vtl_cmp(vtl1->next,vtl2->next);
+}
+
+int etl_vtl_cmp(struct expr_type_list * etl, struct var_type_list * vtl){
+  if(etl==NULL&&vtl==NULL) return 1;
+  if(etl==NULL||vtl==NULL) return 0;
+  return vt_cmp(etl->e->vt,vtl->vt)&&etl_vtl_cmp(etl->next,vtl->next);
 }
 
 char * TEMPLATE_TYPENAME="";
@@ -309,51 +509,12 @@ char * get_template_typename(){
   return TEMPLATE_TYPENAME;
 }
 
-// int validate_typename_char(char * additional_typename, char * type){
-//   if(!strcmp(additional_typename,type)||!strcmp("int",type)) return 1;
-//   else return 0;
-// }
-
-// int validate_typename_vdel(char * additional_typename, struct decl_expr_type_list * elist){
-//   if(elist->next==NULL) return 1;
-//   if(!validate_typename_vde(additional_typename,elist->e)) return 0;
-//   return validate_typename_char(additional_typename,elist->typename)&&validate_typename_vdel(additional_typename,elist->next);
-// }
-
-// int validate_typename_vde(char * additional_typename, struct var_decl_expr * e){
-//   switch (e -> t) {
-//   case T_INT_TYPE:
-//     return 1;
-//   case T_PTR_TYPE:
-//     return validate_typename_vde(additional_typename, e -> d.PTR_TYPE.base);
-//   case T_FUNC_TYPE:
-//     if(!validate_typename_vdel(additional_typename, e->d.FUNC_TYPE.args)) return 0;
-//     else return validate_typename_vde(additional_typename, e -> d.FUNC_TYPE.ret);
-//   };
-// }
-
-// int validate_typename_cmd(char * additional_typename, struct cmd * c){
-//   switch(c -> t) {
-//   case T_DECL:
-//     if(!validate_typename_char(additional_typename,c -> d.DECL.typename)) return 0;
-//     else return validate_typename_vde(additional_typename,c -> d.DECL.right);
-//     break;
-//   case T_SEQ:
-//     if(!validate_typename_cmd(additional_typename,c -> d.SEQ.left)) return 0;
-//     else return validate_typename_cmd(additional_typename,c -> d.SEQ.left);
-//   default:
-//     return 1;
-//   }
-// }
-
-struct var_type * new_var_type_ptr() {
-  struct var_type * res =
-    (struct var_type *) malloc(sizeof(struct var_type));
-  if (res == NULL) {
-    printf("Failure in malloc.\n");
-    exit(0);
-  }
-  return res;
+struct var_type * function_returntype;
+struct var_type * set_function_returntype(struct var_type * vt){
+  function_returntype=vt;
+}
+struct var_type * get_function_returntype(){
+  return function_returntype;
 }
 
 struct var_type * TVarType(char * typename, struct var_decl_expr * vde){
@@ -380,18 +541,6 @@ struct variable_table * TNewVtable(struct variable_table * father_vtable){
   return res;
 }
 
-
-// char * get_vde_name(struct var_decl_expr * e){
-//   switch (e -> t) {
-//   case T_INT_TYPE:
-//     return e -> d.INT_TYPE.name;
-//   case T_PTR_TYPE:
-//     return get_vde_name(e -> d.PTR_TYPE.base);
-//   case T_FUNC_TYPE:
-//     return get_vde_name(e -> d.FUNC_TYPE.ret);
-//   }
-// }
-
 char * get_vde_name(struct var_decl_expr * e){
   switch (e -> t) {
   case T_INT_TYPE:
@@ -400,6 +549,17 @@ char * get_vde_name(struct var_decl_expr * e){
     return get_vde_name(e -> d.PTR_TYPE.base);
   case T_FUNC_TYPE:
     return e -> d.FUNC_TYPE.name;
+  }
+}
+
+struct var_type_list * get_vde_vtl(struct var_decl_expr * e){
+  switch (e -> t) {
+  case T_INT_TYPE:
+    return NULL;
+  case T_PTR_TYPE:
+    return get_vde_vtl(e -> d.PTR_TYPE.base);
+  case T_FUNC_TYPE:
+    return e -> d.FUNC_TYPE.args;
   }
 }
 
@@ -429,8 +589,37 @@ struct variable_table * get_now_vtable(){
   return now_vtable;
 }
 
-void vtable_add(struct variable_table * vtable, char * left_typename, struct var_decl_expr * e){
-  dictionary_set(vtable->vtable, get_vde_name(e), TVarType(left_typename, e));
+void vtable_add(struct variable_table * vtable, struct var_type * vt){
+  char * name=get_vde_name(vt->vde);
+  if(name==NULL||strlen(name)==0) return;
+  dictionary_set(vtable->vtable, name, vt);
+}
+
+
+void vtable_add_list(struct variable_table * vtable, struct var_type_list * vtl){
+  if(vtl==NULL) return;
+  vtable_add(vtable,vtl->vt);
+  vtable_add_list(vtable,vtl->next);
+}
+
+void vtable_add_cmd(struct variable_table * vtable, struct var_type * vt, struct cmd * c){
+  struct var_type * res = vtable_find_vde(vtable, vt->vde);
+  if(res==NULL){
+    printf("[Error] not find the item to add cmd,vartype:");
+    print_vartype(vt);
+    exit(0);
+  }
+  res->vde->d.FUNC_TYPE.body=c;
+}
+
+void vtable_add_template(struct variable_table * vtable, struct var_type * vt, char * templatename){
+  struct var_type * res = vtable_find_vde(vtable, vt->vde);
+  if(res==NULL){
+    printf("[Error] not find the item to add cmd,vartype:");
+    print_vartype(vt);
+    exit(0);
+  }
+  res->vde->d.FUNC_TYPE.templatename=templatename;
 }
 
 void vtable_del(struct variable_table * vtable, struct var_decl_expr * e){
@@ -463,26 +652,27 @@ void pprintf(char * s) {
   printf("%s",s);
 }
 
-void print_decl_expr_type_list_as_argument_types(struct decl_expr_type_list * args) {
+void print_var_type_list_as_argument_types(struct var_type_list * args) {
   if (args == NULL) {
     return;
   }
   print_spaces();
   printf("Argument type:\n");
   indent ++;
-  print_typename_vde(args->typename,args->e);
+  print_vartype(args -> vt);
   indent --;
-  print_decl_expr_type_list_as_argument_types(args -> next);
+  print_var_type_list_as_argument_types(args -> next);
 }
 
 void print_expr_type_list_as_argument_types(struct expr_type_list * args) {
   if (args == NULL) {
     return;
   }
-  print_spaces();
   indent ++;
-  printf("Argument:\n");
+  print_spaces();
+  printf("Argument:");
   print_expr(args -> e);
+  putchar('\n');
   indent --;
   print_expr_type_list_as_argument_types(args -> next);
 }
@@ -498,25 +688,36 @@ char * print_vde(struct var_decl_expr * e) {
   case T_FUNC_TYPE:
     printf("Function of the following type\n");
     indent ++;
+    if(e->d.FUNC_TYPE.templatename){
+      print_spaces();
+      printf("Template name: %s\n",e->d.FUNC_TYPE.templatename);
+    }
     print_spaces();
     printf("Arguments:\n");
     indent ++;
-    print_decl_expr_type_list_as_argument_types(e -> d.FUNC_TYPE.args);
+    print_var_type_list_as_argument_types(e -> d.FUNC_TYPE.args);
     indent --;
     print_spaces();
     printf("Return type: ");
     print_vde(e->d.FUNC_TYPE.ret);
+    if(e->d.FUNC_TYPE.body){
+      print_spaces();
+      printf("Function Body: \n");
+      indent ++;
+      print_cmd(e->d.FUNC_TYPE.body);
+      indent --;
+    }
     indent --;
     return e -> d.FUNC_TYPE.name;
   }
 }
 
-void print_typename_vde(char * typename,struct var_decl_expr * e) {
+void print_vartype(struct var_type * vt){
   print_spaces();
-  printf("Left type: %s\n", typename);
+  printf("Left type: %s\n", vt->typename);
   print_spaces();
   printf("Right type: ");
-  char * varname = print_vde(e);
+  char * varname = print_vde(vt->vde);
   if(strlen(varname)) {
     print_spaces();
     printf("Varname: %s\n",varname);
@@ -610,14 +811,30 @@ void print_expr(struct expr * e) {
     print_expr(e -> d.ADDROF.arg);
     printf(")");
     break;  
-  case T_FUNC:
-    printf("FUNC(");
-    print_expr(e -> d.FUNC.func);
-    printf(",");
-    print_expr_type_list_as_argument_types(e -> d.FUNC.args);
+  case T_INSTANCE:
+    printf("INSTANCE(");
+    indent ++;
+    print_expr(e -> d.INSTANCE.func);
+    printf(",\n");
+    print_vartype(e->d.INSTANCE.vt);
+    print_spaces();
     printf(")");
+    indent --;
+    break;
+  case T_FUNC:
+    printf("FUNCTION(");
+    print_expr(e -> d.FUNC.func);
+    printf(",\n");
+    indent ++;
+    print_spaces();
+    printf("Arguments:\n");
+    print_expr_type_list_as_argument_types(e -> d.FUNC.args);
+    print_spaces();
+    printf(")");
+    indent --;
     break;
   }
+  // print_vartype(e->vt);
 }
 
 void print_cmd(struct cmd * c) {
@@ -625,7 +842,19 @@ void print_cmd(struct cmd * c) {
   case T_DECL:
     pprintf("Variable Declare:\n");
     indent ++;
-    print_typename_vde(c -> d.DECL.typename, c -> d.DECL.right);
+    print_vartype(c -> d.DECL.vt);
+    indent --;
+    break;
+  case T_FUNCDECL:
+    pprintf("Function Declare:\n");
+    indent ++;
+    print_vartype(c->d.FUNCDECL.vt);
+    indent --;
+    break;
+  case T_PROCDECL:
+    pprintf("Process Declare:\n");
+    indent ++;
+    print_vartype(c->d.PROCDECL.vt);
     indent --;
     break;
   case T_ASGN:
@@ -721,7 +950,15 @@ void print_cmd(struct cmd * c) {
     pprintf("Skip;\n");
     break;
   case T_RETURN:
-    pprintf("Return;\n");
+    pprintf("Return");
+    if(c->d.RETURN.e){
+      printf(": ");
+      print_expr(c->d.RETURN.e);
+      putchar('\n');
+    }
+    else{
+      printf(";");
+    }
     break;
   }
 }
