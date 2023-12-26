@@ -21,8 +21,10 @@ int main(int argc, char * * argv) {
     printf("File %s can't be opened.\n", argv[1]);
     return 0;
   }
-  printf("Let's Go\n");
+  printf("Let's do yyparser!\n");
   yyparse();
   fclose(yyin);
   print_cmd(root);
+  
+  return 0;
 }

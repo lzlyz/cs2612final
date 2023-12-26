@@ -1,8 +1,26 @@
+
+/*-------------------------------------------------------------------------*/
+/**
+   @file    lang.c
+   @brief   Implements of lexical analysis, grammar analysis, 
+            grammar tree output, type check, polymorphic function expansion.
+
+*/
+/*--------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------
+                                Includes
+ ---------------------------------------------------------------------------*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "lang.h"
 #include "dictionary.h"
+
+/*---------------------------------------------------------------------------
+                        Grammar tree private functions
+ ---------------------------------------------------------------------------*/
 
 struct var_type * new_var_type_ptr() {
   struct var_type * res =
@@ -62,10 +80,27 @@ struct cmd * new_cmd_ptr() {
   return res;
 }
 
+/* Allocate a new pointer of variable_table. */
+struct variable_table * new_vtable_ptr() {
+  struct variable_table * res =
+    (struct variable_table *) malloc(sizeof(struct variable_table));
+  if (res == NULL) {
+    printf("Failure in malloc.\n");
+    exit(0);
+  }
+  return res;
+}
+
+/*---------------------------------------------------------------------------
+                        Grammar tree function codes
+ ---------------------------------------------------------------------------*/
+
+/* Return a NULL pointer. */
 struct var_type_list * TVTLNil() {
   return NULL;
 }
 
+/* Allocate a pointer of var_type_list with given parameters. */
 struct var_type_list * TVTLCons(struct var_type * vt, struct var_type_list * next) {
   struct var_type_list * res = new_var_type_list_ptr();
   res -> vt = vt;
@@ -73,10 +108,12 @@ struct var_type_list * TVTLCons(struct var_type * vt, struct var_type_list * nex
   return res;
 }
 
+/* Return a NULL pointer. */
 struct expr_type_list * TETLNil() {
   return NULL;
 }
 
+/* Allocate a pointer of var_type_list with given parameters. */
 struct expr_type_list * TETLCons(struct expr * e, struct expr_type_list * next) {
   struct expr_type_list * res = new_expr_type_list_ptr();
   res -> e = e;
@@ -84,6 +121,7 @@ struct expr_type_list * TETLCons(struct expr * e, struct expr_type_list * next) 
   return res;
 }
 
+/* Allocate a pointer of var_decl_expr of INT_TYPE with given parameters. */
 struct var_decl_expr * TIntType(char * name) {
   struct var_decl_expr * res = new_var_decl_expr_ptr();
   res -> t = T_INT_TYPE;
@@ -91,6 +129,7 @@ struct var_decl_expr * TIntType(char * name) {
   return res;
 }
 
+/* Allocate a pointer of var_decl_expr of PTR_TYPE with given parameters. */
 struct var_decl_expr * TPtrType(struct var_decl_expr * base) {
   struct var_decl_expr * res = new_var_decl_expr_ptr();
   switch(base->t){
@@ -116,6 +155,7 @@ struct var_decl_expr * TPtrType(struct var_decl_expr * base) {
   return res;
 }
 
+/* Allocate a pointer of var_decl_expr of FUNC_TYPE with given parameters. */
 struct var_decl_expr * TFuncType(struct var_decl_expr * e, struct var_type_list * args) {
   struct var_decl_expr * res = new_var_decl_expr_ptr();
   switch(e->t){
@@ -144,6 +184,7 @@ struct var_decl_expr * TFuncType(struct var_decl_expr * e, struct var_type_list 
   return res;
 }
 
+/* Allocate a pointer of expr of CONST with given parameters. */
 struct expr * TConst(unsigned int value) {
   struct expr * res = new_expr_ptr();
   res -> t = T_CONST;
@@ -152,6 +193,7 @@ struct expr * TConst(unsigned int value) {
   return res;
 }
 
+/* Allocate a pointer of expr of CONST with given parameters. */
 struct expr * TVar(char * name) {
   struct expr * res = new_expr_ptr();
   res -> t = T_VAR;
@@ -160,6 +202,7 @@ struct expr * TVar(char * name) {
   return res;
 }
 
+/* Allocate a pointer of expr of BINOP with given parameters. */
 struct expr * TBinOp(enum BinOpType op, struct expr * left, struct expr * right) {
   struct expr * res = new_expr_ptr();
   res -> t = T_BINOP;
@@ -181,6 +224,7 @@ struct expr * TBinOp(enum BinOpType op, struct expr * left, struct expr * right)
   return res;
 }
 
+/* Allocate a pointer of expr of UNOP with given parameters. */
 struct expr * TUnOp(enum UnOpType op, struct expr * arg) {
   struct expr * res = new_expr_ptr();
   res -> t = T_UNOP;
@@ -190,6 +234,7 @@ struct expr * TUnOp(enum UnOpType op, struct expr * arg) {
   return res;
 }
 
+/* Allocate a pointer of expr of DEREF with given parameters. */
 struct expr * TDeref(struct expr * arg) {
   struct expr * res = new_expr_ptr();
   res -> t = T_DEREF;
@@ -205,6 +250,7 @@ struct expr * TDeref(struct expr * arg) {
   return res;
 }
 
+/* Allocate a pointer of expr of ADDROF with given parameters. */
 struct expr * TAddrOf(struct expr * arg) {
   struct expr * res = new_expr_ptr();
   res -> t = T_ADDROF;
@@ -214,50 +260,7 @@ struct expr * TAddrOf(struct expr * arg) {
 }
 
 
-struct var_decl_expr * template_expand_vde(struct var_type * expand, struct var_decl_expr* vde, char * template_typename,int ifexpand){
-  struct var_decl_expr * res = new_var_decl_expr_ptr();
-  switch(vde->t){
-  case T_INT_TYPE:
-    if(ifexpand) res = expand->vde;
-    else res = vde;
-    return res;
-  case T_PTR_TYPE:
-    res->t=T_PTR_TYPE;
-    res->d.PTR_TYPE.base = template_expand_vde(expand, vde->d.PTR_TYPE.base,template_typename,ifexpand);
-    return res;
-  case T_FUNC_TYPE:
-    res->t=T_FUNC_TYPE;
-    res->d.FUNC_TYPE.args=template_expand_vtl(expand, vde->d.FUNC_TYPE.args, template_typename);
-    res->d.FUNC_TYPE.templatename=NULL;
-    res->d.FUNC_TYPE.ret=template_expand_vde(expand, vde->d.FUNC_TYPE.ret, template_typename, ifexpand);
-    res->d.FUNC_TYPE.name=vde->d.FUNC_TYPE.name;
-    res->d.FUNC_TYPE.body=vde->d.FUNC_TYPE.body; // TODO: fix body Typename expand
-    return res;
-  }
-}
-
-
-struct var_type * template_expand_vt(struct var_type * expand, struct var_type * vt, char * template_typename){
-  struct var_type * res = new_var_type_ptr();
-  int ifexpand = strcmp(vt->typename,template_typename)==0;
-  if(ifexpand){
-    res -> typename = expand->typename;
-  }
-  else{
-    res -> typename = vt->typename;
-  }
-  res -> vde = template_expand_vde(expand,vt->vde,template_typename,ifexpand);
-  return res;
-}
-
-struct var_type_list * template_expand_vtl(struct var_type * expand, struct var_type_list * vtl, char * template_typename){
-  if(vtl==NULL) return NULL;
-  struct var_type_list * res = new_var_type_list_ptr();
-  res -> vt = template_expand_vt(expand, vtl->vt, template_typename);
-  res -> next = template_expand_vtl(expand,vtl->next,template_typename);
-  return res;
-}
-
+/* Allocate a pointer of expr of INSTANCE with given parameters. */
 struct expr * TInstance(struct expr * func, struct var_type * vt){
   if(func -> vt -> vde -> t != T_FUNC_TYPE){
     printf("[Error] Variable type is not Function when Instance(");
@@ -287,6 +290,7 @@ struct expr * TInstance(struct expr * func, struct var_type * vt){
   return res;
 }
 
+/* Allocate a pointer of expr of FUNC with given parameters. */
 struct expr * TFunc(struct expr * func, struct expr_type_list * args) {
   struct expr * res = new_expr_ptr();
   res -> t = T_FUNC;
@@ -311,15 +315,16 @@ struct expr * TFunc(struct expr * func, struct expr_type_list * args) {
     exit(0);
   }
   // printf("%s",func -> vt -> typename);
-  // printf("WSND");
+  // printf("yes");
   // print_vde(func -> vt -> vde);
-  // printf("WSND");
+  // printf("yes");
   // print_vde(func -> vt -> vde -> d.FUNC_TYPE.ret);
-  // printf("WSND");
+  // printf("yes");
   res -> vt = TVarType(func -> vt -> typename,func -> vt -> vde -> d.FUNC_TYPE.ret);
   return res;
 }
 
+/* Allocate a pointer of cmd of DECL with given parameters. */
 struct cmd * TDecl(struct var_type * vt) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_DECL;
@@ -331,6 +336,7 @@ struct cmd * TDecl(struct var_type * vt) {
   return res;
 }
 
+/* Allocate a pointer of cmd of FUNCDECL with given parameters. */
 struct cmd * TFuncDecl(struct var_type * vt){
   struct cmd * res = new_cmd_ptr();
   res -> t = T_FUNCDECL;
@@ -338,6 +344,7 @@ struct cmd * TFuncDecl(struct var_type * vt){
   return res;
 }
 
+/* Allocate a pointer of cmd of PROCDECL with given parameters. */
 struct cmd * TProcDecl(struct var_type * vt){
   struct cmd * res = new_cmd_ptr();
   res -> t = T_PROCDECL;
@@ -345,6 +352,7 @@ struct cmd * TProcDecl(struct var_type * vt){
   return res;
 }
 
+/* Allocate a pointer of cmd of ASGN with given parameters. */
 struct cmd * TAsgn(struct expr * left, struct expr * right) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_ASGN;
@@ -363,6 +371,7 @@ struct cmd * TAsgn(struct expr * left, struct expr * right) {
   return res;
 }
 
+/* Allocate a pointer of cmd of SEQ with given parameters. */
 struct cmd * TSeq(struct cmd * left, struct cmd * right) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_SEQ;
@@ -371,6 +380,7 @@ struct cmd * TSeq(struct cmd * left, struct cmd * right) {
   return res;
 }
 
+/* Allocate a pointer of cmd of IF with given parameters. */
 struct cmd * TIf(struct expr * cond, struct cmd * left, struct cmd * right) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_IF;
@@ -380,6 +390,7 @@ struct cmd * TIf(struct expr * cond, struct cmd * left, struct cmd * right) {
   return res;
 }
 
+/* Allocate a pointer of cmd of WHILEDO with given parameters. */
 struct cmd * TWhileDo(struct expr * cond, struct cmd * body) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_WHILEDO;
@@ -388,6 +399,7 @@ struct cmd * TWhileDo(struct expr * cond, struct cmd * body) {
   return res;
 }
 
+/* Allocate a pointer of cmd of DOWHILE with given parameters. */
 struct cmd * TDoWhile(struct cmd * body, struct expr * cond) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_DOWHILE;
@@ -396,6 +408,7 @@ struct cmd * TDoWhile(struct cmd * body, struct expr * cond) {
   return res;
 }
 
+/* Allocate a pointer of cmd of FOR with given parameters. */
 struct cmd * TFor(struct cmd * init, struct expr * cond, struct cmd * nxt, struct cmd * body) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_FOR;
@@ -406,6 +419,7 @@ struct cmd * TFor(struct cmd * init, struct expr * cond, struct cmd * nxt, struc
   return res;
 }
 
+/* Allocate a pointer of cmd of LOCAL with given parameters. */
 struct cmd * TLocal(char * var, struct cmd * body) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_LOCAL;
@@ -414,24 +428,21 @@ struct cmd * TLocal(char * var, struct cmd * body) {
   return res;
 }
 
-struct cmd * TContinue() {
-  struct cmd * res = new_cmd_ptr();
-  res -> t = T_CONTINUE;
-  return res;
-}
-
-struct cmd * TSkip() {
-  struct cmd * res = new_cmd_ptr();
-  res -> t = T_SKIP;
-  return res;
-}
-
+/* Allocate a pointer of cmd of BREAK. */
 struct cmd * TBreak() {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_BREAK;
   return res;
 }
 
+/* Allocate a pointer of cmd of CONTINUE. */
+struct cmd * TContinue() {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_CONTINUE;
+  return res;
+}
+
+/* Allocate a pointer of cmd of RETURN with given parameters. */
 struct cmd * TReturn(struct expr * e) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_RETURN;
@@ -447,6 +458,14 @@ struct cmd * TReturn(struct expr * e) {
   return res;
 }
 
+/* Allocate a pointer of cmd of SKIP. */
+struct cmd * TSkip() {
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_SKIP;
+  return res;
+}
+
+/* Allocate a pointer of cmd of PROC with given parameters. */
 struct cmd * TProc(struct expr * func, struct expr_type_list * args) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_PROC;
@@ -473,6 +492,52 @@ struct cmd * TProc(struct expr * func, struct expr_type_list * args) {
   return res;
 }
 
+/* Return a var_type pointer with given typename and var_decl_expr. */
+struct var_type * TVarType(char * typename, struct var_decl_expr * vde){
+  struct var_type * res = new_var_type_ptr();
+  res -> typename = typename;
+  res -> vde = vde;
+  return res;
+}
+
+/* Assume given vt is funtion_type. Allocate a pointer of var_type with the return type of given vt. */
+struct var_type * TFuncReturnType(struct var_type * vt){
+  if(vt->vde->t!=T_FUNC_TYPE){
+    yyerror("[Error] in TFuncReturnType, given var_type is not a function type. Mostly this error is caused by you are declaring a function but given var_decl_expr is not a function.");
+    exit(0);
+  }
+  return TVarType(vt -> typename, vt -> vde -> d.FUNC_TYPE.ret);
+}
+
+/* Allocate a new variable_table with given father_vtable. */
+struct variable_table * TNewVtable(struct variable_table * father_vtable){
+  struct variable_table * res = new_vtable_ptr();
+  res -> dict = dictionary_new(30);
+  res -> father_vtable= father_vtable;
+  return res;
+}
+
+
+/*---------------------------------------------------------------------------
+                          Type check private functions
+ ---------------------------------------------------------------------------*/
+
+/* TEMPLATE_TYPENAME is used to record the template typename when checking the declaration of polymorphic functions. */
+char * TEMPLATE_TYPENAME="";
+
+/* function_returntype is used to record the return type of the functino when checking cmd "return". */
+struct var_type * function_returntype;
+
+/* global_vtable is the global variable table. 
+   now_vtable is the current local variable table. */
+struct variable_table * global_vtable;
+struct variable_table * now_vtable;
+
+/*---------------------------------------------------------------------------
+                            Type check function codes
+ ---------------------------------------------------------------------------*/
+
+/* Compare whether two var_decl_expr are the same. If same, return 1, else 0. */
 int vde_cmp(struct var_decl_expr * e1,struct var_decl_expr * e2){
   if(e1->t!=e2->t) return 0;
   switch(e1->t){
@@ -485,62 +550,26 @@ int vde_cmp(struct var_decl_expr * e1,struct var_decl_expr * e2){
   }
 }
 
+/* Compare whether two var_type are the same. If same, return 1, else 0. */
 int vt_cmp(struct var_type * vt1, struct var_type * vt2){
   return strcmp(vt1->typename,vt2->typename)==0&&vde_cmp(vt1->vde,vt2->vde);
 }
 
+/* Compare whether two var_type_list are the same. If same, return 1, else 0. */
 int vtl_cmp(struct var_type_list * vtl1, struct var_type_list * vtl2){
   if(vtl1==vtl2) return 1;
   if(vtl1==NULL||vtl2==NULL) return 0;
   return vt_cmp(vtl1->vt,vtl2->vt)&&vtl_cmp(vtl1->next,vtl2->next);
 }
 
+/* Compare whether two expr_type_list are the same. If same, return 1, else 0. */
 int etl_vtl_cmp(struct expr_type_list * etl, struct var_type_list * vtl){
   if(etl==NULL&&vtl==NULL) return 1;
   if(etl==NULL||vtl==NULL) return 0;
   return vt_cmp(etl->e->vt,vtl->vt)&&etl_vtl_cmp(etl->next,vtl->next);
 }
 
-char * TEMPLATE_TYPENAME="";
-void set_template_typename(char * typename){
-  TEMPLATE_TYPENAME=typename;
-}
-char * get_template_typename(){
-  return TEMPLATE_TYPENAME;
-}
-
-struct var_type * function_returntype;
-struct var_type * set_function_returntype(struct var_type * vt){
-  function_returntype=vt;
-}
-struct var_type * get_function_returntype(){
-  return function_returntype;
-}
-
-struct var_type * TVarType(char * typename, struct var_decl_expr * vde){
-  struct var_type * res = new_var_type_ptr();
-  res -> typename = typename;
-  res -> vde = vde;
-  return res;
-}
-
-struct variable_table * new_vtable_ptr() {
-  struct variable_table * res =
-    (struct variable_table *) malloc(sizeof(struct variable_table));
-  if (res == NULL) {
-    printf("Failure in malloc.\n");
-    exit(0);
-  }
-  return res;
-}
-
-struct variable_table * TNewVtable(struct variable_table * father_vtable){
-  struct variable_table * res = new_vtable_ptr();
-  res -> vtable = dictionary_new(30);
-  res -> father_vtable= father_vtable;
-  return res;
-}
-
+/* Extract the name of var_decl_expr. */
 char * get_vde_name(struct var_decl_expr * e){
   switch (e -> t) {
   case T_INT_TYPE:
@@ -552,6 +581,8 @@ char * get_vde_name(struct var_decl_expr * e){
   }
 }
 
+/* Return the first var_type_list of a var_decl_expr. 
+   Mostly this is used for extract the type of arguments of a (pointer of) function for type checking. */
 struct var_type_list * get_vde_vtl(struct var_decl_expr * e){
   switch (e -> t) {
   case T_INT_TYPE:
@@ -563,45 +594,72 @@ struct var_type_list * get_vde_vtl(struct var_decl_expr * e){
   }
 }
 
-struct variable_table * global_vtable;
-struct variable_table * now_vtable;
+/* Set TEMPLATE_TYPENAME to given typename. */
+void set_template_typename(char * typename){
+  TEMPLATE_TYPENAME=typename;
+}
 
+/* Get TEMPLATE_TYPENAME. */
+char * get_template_typename(){
+  return TEMPLATE_TYPENAME;
+}
+
+
+/* Set function_returntype to given typename. */
+struct var_type * set_function_returntype(struct var_type * vt){
+  function_returntype=vt;
+}
+
+/* Get function_returntype. */
+struct var_type * get_function_returntype(){
+  return function_returntype;
+}
+
+/* Initialize global_vtable and now_vtable. */
 void init_global_vtable(){
   now_vtable = global_vtable = TNewVtable(NULL);
 }
 
+/* Allocate a new local variable table.
+   The new variable table use now_vtable as father variable table then assign the new one to now_vtable. */
 void init_new_now_vtable(){
   now_vtable = TNewVtable(now_vtable);
 }
 
+/* Free now_vtable and assign the father of now_vtable to now_vtable. */
 void clear_now_vtable(){
   struct variable_table * temp_vtable = now_vtable->father_vtable;
-  dictionary_del(now_vtable->vtable);
+  dictionary_del(now_vtable->dict);
   free(now_vtable);
   now_vtable = temp_vtable;
 }
 
+/* Get global_vtable. */
 struct variable_table * get_global_vtable(){
   return global_vtable;
 }
 
+/* Get now_vtable. */
 struct variable_table * get_now_vtable(){
   return now_vtable;
 }
 
+/* Add a item(pointer of var_type) to given vtable. */
 void vtable_add(struct variable_table * vtable, struct var_type * vt){
   char * name=get_vde_name(vt->vde);
   if(name==NULL||strlen(name)==0) return;
-  dictionary_set(vtable->vtable, name, vt);
+  dictionary_set(vtable->dict, name, vt);
 }
 
-
+/* Add a item(pointer of var_type) to given vtable. */
 void vtable_add_list(struct variable_table * vtable, struct var_type_list * vtl){
   if(vtl==NULL) return;
   vtable_add(vtable,vtl->vt);
   vtable_add_list(vtable,vtl->next);
 }
 
+/* Find the correct item (require function type) in given variable table (mostly global variable table) and modify its cmd body. 
+   This is mainly used to update functions in global variable table. */
 void vtable_add_cmd(struct variable_table * vtable, struct var_type * vt, struct cmd * c){
   struct var_type * res = vtable_find_vde(vtable, vt->vde);
   if(res==NULL){
@@ -612,6 +670,8 @@ void vtable_add_cmd(struct variable_table * vtable, struct var_type * vt, struct
   res->vde->d.FUNC_TYPE.body=c;
 }
 
+/* Find the correct item (require function type) in given variable table (mostly global variable table) and modify its templatename. 
+   This is mainly used to update polymorphic functions in global variable table. */
 void vtable_add_template(struct variable_table * vtable, struct var_type * vt, char * templatename){
   struct var_type * res = vtable_find_vde(vtable, vt->vde);
   if(res==NULL){
@@ -622,24 +682,100 @@ void vtable_add_template(struct variable_table * vtable, struct var_type * vt, c
   res->vde->d.FUNC_TYPE.templatename=templatename;
 }
 
+/* Delete a item(pointer of var_type) of given vtable. */
 void vtable_del(struct variable_table * vtable, struct var_decl_expr * e){
-  dictionary_unset(vtable->vtable, get_vde_name(e));
+  dictionary_unset(vtable->dict, get_vde_name(e));
 }
 
+/* Find the item(pointer of var_type) of given vtable using given var_decl_expr. */
 struct var_type * vtable_find_vde(struct variable_table * vtable, struct var_decl_expr * e){
   return vtable_find_char(vtable,get_vde_name(e));
 }
 
+/* Find the item(pointer of var_type) of given vtable using given name. */
 struct var_type * vtable_find_char(struct variable_table * vtable, char * var_name){
   if(vtable==NULL) return NULL;
-  struct var_type * res = dictionary_get(vtable->vtable, var_name,NULL);
+  struct var_type * res = dictionary_get(vtable->dict, var_name,NULL);
   if(res==NULL) return vtable_find_char(vtable->father_vtable,var_name);
   else return res;
 }
 
+/*---------------------------------------------------------------------------
+                    Polymorphic expansion private functions
+ ---------------------------------------------------------------------------*/
 
+/* None */
+ 
+/*---------------------------------------------------------------------------
+                      Polymorphic expansion function codes
+ ---------------------------------------------------------------------------*/
+
+/* If ifexpand==true, expand var_decl_expr without command body. */
+struct var_decl_expr * template_expand_vde(struct var_type * expand, struct var_decl_expr* vde, char * template_typename,int ifexpand){
+  struct var_decl_expr * res = new_var_decl_expr_ptr();
+  switch(vde->t){
+  case T_INT_TYPE:
+    if(ifexpand) res = expand->vde;
+    else res = vde;
+    return res;
+  case T_PTR_TYPE:
+    res->t=T_PTR_TYPE;
+    res->d.PTR_TYPE.base = template_expand_vde(expand, vde->d.PTR_TYPE.base,template_typename,ifexpand);
+    return res;
+  case T_FUNC_TYPE:
+    res->t=T_FUNC_TYPE;
+    res->d.FUNC_TYPE.args=template_expand_vtl(expand, vde->d.FUNC_TYPE.args, template_typename);
+    res->d.FUNC_TYPE.templatename=NULL;
+    res->d.FUNC_TYPE.ret=template_expand_vde(expand, vde->d.FUNC_TYPE.ret, template_typename, ifexpand);
+    res->d.FUNC_TYPE.name=vde->d.FUNC_TYPE.name;
+    res->d.FUNC_TYPE.body=vde->d.FUNC_TYPE.body; // TODO: fix body Typename expand
+    return res;
+  }
+}
+
+/* Expand var_type */
+struct var_type * template_expand_vt(struct var_type * expand, struct var_type * vt, char * template_typename){
+  struct var_type * res = new_var_type_ptr();
+  int ifexpand = strcmp(vt->typename,template_typename)==0;
+  if(ifexpand){
+    res -> typename = expand->typename;
+  }
+  else{
+    res -> typename = vt->typename;
+  }
+  res -> vde = template_expand_vde(expand,vt->vde,template_typename,ifexpand);
+  return res;
+}
+
+/* Expand var_type_list. */
+struct var_type_list * template_expand_vtl(struct var_type * expand, struct var_type_list * vtl, char * template_typename){
+  if(vtl==NULL) return NULL;
+  struct var_type_list * res = new_var_type_list_ptr();
+  res -> vt = template_expand_vt(expand, vtl->vt, template_typename);
+  res -> next = template_expand_vtl(expand,vtl->next,template_typename);
+  return res;
+}
+
+/* Test the whether the polynomial function can be expanded as limited copies. */
+int template_test(){
+  struct var_type * main_vt=vtable_find_char(get_global_vtable(),"main");
+  if(main_vt==NULL){
+    printf("[Error][Template Test]No \"main\" Function!");
+    return 0;
+  }
+  return 0;
+}
+
+
+
+/*---------------------------------------------------------------------------
+                    Grammar tree output private functions
+ ---------------------------------------------------------------------------*/
+
+/* indent is used for record the spaces that need to be printed. */
 int indent = 0;
 
+/* print spaces depending on indent. */
 void print_spaces() {
   int i;
   for (i = 0; i < indent; ++ i) {
@@ -647,11 +783,17 @@ void print_spaces() {
   }
 }
 
+/* print spaces and print given string. */
 void pprintf(char * s) {
   print_spaces();
   printf("%s",s);
 }
+ 
+/*---------------------------------------------------------------------------
+                      Grammar tree output function codes
+ ---------------------------------------------------------------------------*/
 
+/* print given var_type_list as arguments of functions. */
 void print_var_type_list_as_argument_types(struct var_type_list * args) {
   if (args == NULL) {
     return;
@@ -664,6 +806,7 @@ void print_var_type_list_as_argument_types(struct var_type_list * args) {
   print_var_type_list_as_argument_types(args -> next);
 }
 
+/* print given expr_type_list as arguments of calling functions. */
 void print_expr_type_list_as_argument_types(struct expr_type_list * args) {
   if (args == NULL) {
     return;
@@ -677,6 +820,7 @@ void print_expr_type_list_as_argument_types(struct expr_type_list * args) {
   print_expr_type_list_as_argument_types(args -> next);
 }
 
+/* print given var_decl_expr. */
 char * print_vde(struct var_decl_expr * e) {
   switch (e -> t) {
   case T_INT_TYPE:
@@ -712,6 +856,7 @@ char * print_vde(struct var_decl_expr * e) {
   }
 }
 
+/* print given var_type. */
 void print_vartype(struct var_type * vt){
   print_spaces();
   printf("Left type: %s\n", vt->typename);
@@ -724,6 +869,7 @@ void print_vartype(struct var_type * vt){
   }
 }
 
+/* print given binary operator. */
 void print_binop(enum BinOpType op) {
   switch (op) {
   case T_PLUS:
@@ -768,6 +914,7 @@ void print_binop(enum BinOpType op) {
   }
 }
 
+/* print given unary operator. */
 void print_unop(enum UnOpType op) {
   switch (op) {
   case T_UMINUS:
@@ -779,6 +926,7 @@ void print_unop(enum UnOpType op) {
   }
 }
 
+/* print given expr. */
 void print_expr(struct expr * e) {
   switch (e -> t) {
   case T_CONST:
@@ -837,6 +985,7 @@ void print_expr(struct expr * e) {
   // print_vartype(e->vt);
 }
 
+/* print given cmd. */
 void print_cmd(struct cmd * c) {
   switch (c -> t) {
   case T_DECL:
@@ -963,6 +1112,11 @@ void print_cmd(struct cmd * c) {
   }
 }
 
+/*---------------------------------------------------------------------------
+                            Other function codes
+ ---------------------------------------------------------------------------*/
+
+/* build nature number. */
 unsigned int build_nat(char * c, int len) {
   int s = 0, i = 0;
   for (i = 0; i < len; ++i) {
@@ -979,6 +1133,7 @@ unsigned int build_nat(char * c, int len) {
   return s;
 }
 
+/* allocate a new string. */
 char * new_str(char * str, int len) {
   char * res = (char *) malloc(sizeof(char) * (len + 1));
   if (res == NULL) {

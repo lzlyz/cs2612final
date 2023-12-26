@@ -20,7 +20,9 @@ struct var_type * vt;
 void * none;
 }
 
-// Terminals
+/* ----------------------------------
+              Terminals
+   ---------------------------------- */
 %token <n> TM_NAT
 %token <i> TM_IDENT
 %token <none> TM_LEFT_BRACE TM_RIGHT_BRACE
@@ -36,9 +38,12 @@ void * none;
 %token <none> TM_PLUS TM_MINUS
 %token <none> TM_MUL TM_DIV TM_MOD
 %token <none> TM_UMINUS TM_DEREF TM_ADDROF
-%token <none> TM_TYPENAME TM_TEMPLATE TM_TYPE_NAME TM_VAR_NAME// TM_TYPENAME: typename TYPE_NAME: ->given another realisitc type name
+// TM_TYPENAME is keyword "typename", TM_TYPE_NAME is the left type name used in declaration.
+%token <none> TM_TYPENAME TM_TEMPLATE TM_TYPE_NAME TM_VAR_NAME
 
-// Nonterminals
+/* ----------------------------------
+              Nonterminals
+   ---------------------------------- */
 %type <c> NT_WHOLE
 %type <c> NT_GLOBAL_CMD
 %type <c> NT_LOCAL_CMD
@@ -53,10 +58,15 @@ void * none;
 %type <i> NT_TYPE_NAME
 %type <i> NT_TEMPLATE_HEAD
 
+// Nonterminals suffixed with "HEAD" are used to allocate a local variable table,
+// confirm the return type of functions and confirm the template type name of 
+// polymorphic functions before it starts reading commands.
 %type <vt> NT_FUNC_HEAD NT_PROC_HEAD NT_NAMED_HEAD NT_ANNON_HEAD
 %type <none> NT_FOR_HEAD NT_WHILE_HEAD NT_DO_HEAD NT_IF_HEAD NT_LOCAL_HEAD
 
-// Priority
+/* ----------------------------------
+                Priority 
+   ---------------------------------- */
 %nonassoc TM_ASGNOP TM_INTTYPE TM_VAR TM_IF TM_THEN TM_ELSE TM_WHILE TM_DO TM_FOR TM_LOCAL TM_IN TM_SKIP TM_CONTINUE TM_BREAK TM_RETURN TM_TEMPLATE TM_TYPENAME  
 %left TM_OR
 %left TM_AND
@@ -70,6 +80,10 @@ void * none;
 %right TM_COMMA
 %right TM_SEMICOL
 
+
+/* ----------------------------------
+            Convention rules
+   ---------------------------------- */
 %%
 
 NT_WHOLE:
@@ -418,20 +432,16 @@ NT_TEMPLATE_HEAD:
   }
 
 NT_FUNC_HEAD:
-  TM_FUNC NT_TYPE_NAME NT_NAMED_RIGHT_EXPR
+  TM_FUNC NT_NAMED_HEAD
   {
-    if($3->t!=T_FUNC_TYPE){
-      yyerror("[Error] in Function Declare, not declare a function.");
-      exit(0);
-    }
 
-    $$ = TVarType($2, $3);
-    vtable_add(get_global_vtable(), $$);
+    $$ = $2
+    vtable_add(get_global_vtable(), $2);
 
-    set_function_returntype(TVarType($2,$3->d.FUNC_TYPE.ret));
+    set_function_returntype(TFuncReturnType($2));
 
     init_new_now_vtable();
-    vtable_add_list(get_now_vtable(),get_vde_vtl($3));
+    vtable_add_list(get_now_vtable(),get_vde_vtl($2->vde));
   }
 
 NT_PROC_HEAD:
@@ -492,6 +502,10 @@ NT_ANNON_HEAD:
   }
 
 %%
+
+/* ----------------------------------
+            Other Functions
+   ---------------------------------- */
 
 void yyerror(char* s)
 {

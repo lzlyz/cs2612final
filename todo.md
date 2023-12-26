@@ -157,4 +157,5 @@ fa<T>;
 Conclusion1: T不影响最终的函数副本结果，只跟函数原本的定义有关
 Conclusion1: T不影响最终的函数副本结果
 
-main-> fa<T> -> fb<T> -> (之前出现过的函数名)<T *> 爆了
+main-> fa<T> -> fb<T> -> (之前出现过的函数名)<T *> end
+

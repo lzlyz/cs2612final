@@ -1,10 +1,29 @@
+
+/*-------------------------------------------------------------------------*/
+/**
+   @file    lang.h
+   @brief   Implements of lexical analysis, grammar analysis, 
+            grammar tree output, type check, polymorphic function expansion.
+
+*/
+/*--------------------------------------------------------------------------*/
+
 #ifndef LANG_H_INCLUDED
 #define LANG_H_INCLUDED
+
+/*---------------------------------------------------------------------------
+                                Includes
+ ---------------------------------------------------------------------------*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include "dictionary.h"
 
+/*---------------------------------------------------------------------------
+                              New Enumerations
+ ---------------------------------------------------------------------------*/
+
+/* The enumeration of binary operations. */
 enum BinOpType {
   T_PLUS,
   T_MINUS,
@@ -21,11 +40,13 @@ enum BinOpType {
   T_OR
 };
 
+/* The enumeration of unary operations. */
 enum UnOpType {
   T_UMINUS,
   T_NOT
 };
 
+/* The enumeration of expressions. */
 enum ExprType {
   T_CONST = 0,
   T_VAR,
@@ -37,6 +58,7 @@ enum ExprType {
   T_FUNC
 };
 
+/* The enumeration of binary commands. */
 enum CmdType {
   T_DECL = 0,
   T_FUNCDECL,
@@ -55,14 +77,40 @@ enum CmdType {
   T_PROC
 };
 
+/* The enumeration of the right variable declaration expression(var_decl_expr). */
 enum VarDeclType {
   T_INT_TYPE,
   T_PTR_TYPE,
   T_FUNC_TYPE
 };
 
-struct var_type_list;
+/*---------------------------------------------------------------------------
+                              Types Prototypes
+ ---------------------------------------------------------------------------*/
 
+struct var_type_list;
+struct var_decl_expr;
+struct var_type;
+struct var_type_list;
+struct expr_type_list;
+struct expr;
+struct expr_type_list;
+struct cmd;
+struct variable_table;
+
+/*---------------------------------------------------------------------------
+                                New types
+ ---------------------------------------------------------------------------*/
+
+/**
+  @brief variable declaration expression.
+
+  This object describe a right type variable delcaration expression.
+  INT_TYPE only contains the name of the variable.
+  PTR_TYPE only contains what it points to.
+  FUNC_TYPE contains the name of polymorphic template, the name of variable,
+  the list of arguments, the type of return value and the body of commands.
+ */
 struct var_decl_expr {
   enum VarDeclType t;
   union {
@@ -72,18 +120,41 @@ struct var_decl_expr {
   } d;
 };
 
+/**
+  @brief    variable type. 
+
+  This object describe a full type of a variable. 
+  This object contains the left typename and 
+  the right variable declaration expression(var_decl_expr).
+ */
 struct var_type{
   char * typename;
   struct var_decl_expr * vde;
 };
 
+/**
+  @brief    list of variable type.
+
+  This object is a chain of variable type(var_type).
+ */
 struct var_type_list {
   struct var_type * vt;
   struct var_type_list * next;
 };
 
-struct expr_type_list;
+/**
+  @brief    expression.
 
+  This object is the expression.
+  CONST contains the exact value.
+  VAR contains the name of the variable.
+  BINOP contains the binary operation, the left expression and the right expression.
+  UNOP contains the unary operation, the only expression.
+  DEREF contains the target expression to dereference.
+  ADDROF contains the target expression to get address.
+  INSTANCE contains the expression of polymorphic function and target variable type.
+  FUNC contains the expression of function and arguments.
+ */
 struct expr {
   enum ExprType t;
   struct var_type * vt;
@@ -99,11 +170,33 @@ struct expr {
   } d;
 };
 
+/**
+  @brief    list of expression.
+
+  This object is a chain of expressions(expr).
+ */
 struct expr_type_list {
   struct expr * e;
   struct expr_type_list * next;
 };
 
+/**
+  @brief    command.
+
+  This object is the command.
+  DECL contains the variable type(var_type) to declare.
+  FUNCDECL contains the polymorphic templatename(or not) and the variable type to declare.
+  PROCDECL contains the polymorphic templatename(or not) and the variable type to declare.
+  ASGN contains the left expression to be assigned and the right expression to assign.
+  SEQ contains the left and right expression.
+  WHILEDO contains the condition and the command body.
+  DOWHILE contains the command body and the condition.
+  FOR contains the initialization command, the condition, the step command, the command body.
+  LOCAL contains the variable and the command body.
+  CONTINUE, BREAK, SKIP contains nothing.
+  RETURN contains what it will return.
+  PROC contains the expression of a process and the arguments.
+ */
 struct cmd {
   enum CmdType t;
   union {
@@ -125,85 +218,249 @@ struct cmd {
   } d;
 };
 
+/**
+  @brief    variable table.
+
+  Variable table contains a dictionary and the father.
+  Variable table is used for looking up the variable type with given name.
+  Since there exists global variable and local variable, father_vtable is used to 
+  record the father variable table with a larger scope. 
+ */
 struct variable_table{
-  dictionary * vtable;
+  dictionary * dict;
   struct variable_table * father_vtable;
 };
 
+/*---------------------------------------------------------------------------
+                      Grammar Tree function prototypes
+ ---------------------------------------------------------------------------*/
+
+/* Return a NULL pointer. */
 struct var_type_list * TVTLNil();
+
+/* Allocate a pointer of var_type_list with given parameters. */
 struct var_type_list * TVTLCons(struct var_type * vt, struct var_type_list * next);
+
+/* Return a NULL pointer. */
 struct expr_type_list * TETLNil();
+
+/* Allocate a pointer of var_type_list with given parameters. */
 struct expr_type_list * TETLCons(struct expr * e, struct expr_type_list * next);
+
+/* Allocate a pointer of var_decl_expr of INT_TYPE with given parameters. */
 struct var_decl_expr * TIntType(char * name);
+
+/* Allocate a pointer of var_decl_expr of PTR_TYPE with given parameters. */
 struct var_decl_expr * TPtrType(struct var_decl_expr * base);
+
+/* Allocate a pointer of var_decl_expr of FUNC_TYPE with given parameters. */
 struct var_decl_expr * TFuncType(struct var_decl_expr * ret, struct var_type_list * args);
+
+/* Allocate a pointer of expr of CONST with given parameters. */
 struct expr * TConst(unsigned int value);
+
+/* Allocate a pointer of expr of CONST with given parameters. */
 struct expr * TVar(char * name);
+
+/* Allocate a pointer of expr of BINOP with given parameters. */
 struct expr * TBinOp(enum BinOpType op, struct expr * left, struct expr * right);
+
+/* Allocate a pointer of expr of UNOP with given parameters. */
 struct expr * TUnOp(enum UnOpType op, struct expr * arg);
+
+/* Allocate a pointer of expr of DEREF with given parameters. */
 struct expr * TDeref(struct expr * arg);
+
+/* Allocate a pointer of expr of ADDROF with given parameters. */
 struct expr * TAddrOf(struct expr * arg);
+
+/* Allocate a pointer of expr of INSTANCE with given parameters. */
 struct expr * TInstance(struct expr * func, struct var_type * vt);
+
+/* Allocate a pointer of expr of FUNC with given parameters. */
 struct expr * TFunc(struct expr * func, struct expr_type_list * args);
+
+/* Allocate a pointer of cmd of DECL with given parameters. */
 struct cmd * TDecl(struct var_type * vt);
+
+/* Allocate a pointer of cmd of FUNCDECL with given parameters. */
 struct cmd * TFuncDecl(struct var_type * vt);
+
+/* Allocate a pointer of cmd of PROCDECL with given parameters. */
 struct cmd * TProcDecl(struct var_type * vt);
+
+/* Allocate a pointer of cmd of ASGN with given parameters. */
 struct cmd * TAsgn(struct expr * left, struct expr * right);
+
+/* Allocate a pointer of cmd of SEQ with given parameters. */
 struct cmd * TSeq(struct cmd * left, struct cmd * right);
+
+/* Allocate a pointer of cmd of IF with given parameters. */
 struct cmd * TIf(struct expr * cond, struct cmd * left, struct cmd * right);
+
+/* Allocate a pointer of cmd of WHILEDO with given parameters. */
 struct cmd * TWhileDo(struct expr * cond, struct cmd * body);
+
+/* Allocate a pointer of cmd of DOWHILE with given parameters. */
 struct cmd * TDoWhile(struct cmd * body, struct expr * cond);
+
+/* Allocate a pointer of cmd of FOR with given parameters. */
 struct cmd * TFor(struct cmd * init, struct expr * cond, struct cmd * nxt, struct cmd * body);
+
+/* Allocate a pointer of cmd of LOCAL with given parameters. */
 struct cmd * TLocal(char * var, struct cmd * body);
+
+/* Allocate a pointer of cmd of BREAK. */
 struct cmd * TBreak();
+
+/* Allocate a pointer of cmd of CONTINUE. */
 struct cmd * TContinue();
+
+/* Allocate a pointer of cmd of RETURN with given parameters. */
 struct cmd * TReturn(struct expr * e);
+
+/* Allocate a pointer of cmd of SKIP. */
 struct cmd * TSkip();
+
+/* Allocate a pointer of cmd of PROC with given parameters. */
 struct cmd * TProc(struct expr * proc, struct expr_type_list * args);
+
+/* Allocate a pointer of var_type with given parameters. */
 struct var_type * TVarType(char * typename, struct var_decl_expr * vde);
 
+/* Assume given vt is funtion_type. Allocate a pointer of var_type with the return type of given vt. */
+struct var_type * TFuncReturnType(struct var_type * vt);
+
+/* Allocate a new variable_table with given father_vtable. */
+struct variable_table * TNewVtable(struct variable_table * father_vtable);
+
+/*---------------------------------------------------------------------------
+                        Type check function prototypes
+ ---------------------------------------------------------------------------*/
+
+/* Compare whether two var_decl_expr are the same. If same, return 1, else 0. */
 int vde_cmp(struct var_decl_expr * e1,struct var_decl_expr * e2);
+
+/* Compare whether two var_type are the same. If same, return 1, else 0. */
 int vt_cmp(struct var_type * vt1,struct var_type * vt2);
+
+/* Compare whether two var_type_list are the same. If same, return 1, else 0. */
 int vtl_cmp(struct var_type_list * vtl1, struct var_type_list * vtl2);
+
+/* Compare whether two expr_type_list are the same. If same, return 1, else 0. */
 int etl_vtl_cmp(struct expr_type_list * etl, struct var_type_list * vtl);
 
+/* Extract the name of var_decl_expr. */
 char * get_vde_name(struct var_decl_expr * e);
+
+/* Return the first var_type_list of a var_decl_expr. 
+   Mostly this is used for extract the type of arguments of a (pointer of) function for type checking. */
 struct var_type_list * get_vde_vtl(struct var_decl_expr * e);
 
-void init_global_vtable();
-void init_new_now_vtable();
-void clear_now_vtable();
-struct variable_table * get_global_vtable();
-struct variable_table * get_now_vtable();
-void vtable_add(struct variable_table * vtable, struct var_type * vt);
-void vtable_add_list(struct variable_table * vtable, struct var_type_list * vtl);
-void vtable_add_cmd(struct variable_table * vtable, struct var_type * vt, struct cmd * c);
-void vtable_add_template(struct variable_table * vtable, struct var_type * vt, char * templatename);
-void vtable_del(struct variable_table * vtable, struct var_decl_expr * e);
-struct var_type * vtable_find_vde(struct variable_table * vtable, struct var_decl_expr * e);
-struct var_type * vtable_find_char(struct variable_table * vtable, char * var_name);
-
+/* Set TEMPLATE_TYPENAME to given typename. */
 void set_template_typename(char * typename);
+
+/* Get TEMPLATE_TYPENAME. */
 char * get_template_typename();
 
+/* Set function_returntype to given typename. */
 struct var_type * set_function_returntype(struct var_type * vt);
+
+/* Get function_returntype. */
 struct var_type * get_function_returntype();
 
-struct var_type * template_expand_vt(struct var_type * expand, struct var_type * vt, char * template_typename);
+/* Initialize global_vtable and now_vtable. */
+void init_global_vtable();
+
+/* Allocate a new local variable table.
+   The new variable table use now_vtable as father variable table then assign the new one to now_vtable. */
+void init_new_now_vtable();
+
+/* Free now_vtable and assign the father of now_vtable to now_vtable. */
+void clear_now_vtable();
+
+/* Get global_vtable. */
+struct variable_table * get_global_vtable();
+
+/* Get now_vtable. */
+struct variable_table * get_now_vtable();
+
+/* Add a item(pointer of var_type) to given vtable. */
+void vtable_add(struct variable_table * vtable, struct var_type * vt);
+
+/* Add a item(pointer of var_type) to given vtable. */
+void vtable_add_list(struct variable_table * vtable, struct var_type_list * vtl);
+
+/* Find the correct item (require function type) in given variable table (mostly global variable table) and modify its cmd body. 
+   This is mainly used to update functions in global variable table. */
+void vtable_add_cmd(struct variable_table * vtable, struct var_type * vt, struct cmd * c);
+
+/* Find the correct item (require function type) in given variable table (mostly global variable table) and modify its templatename. 
+   This is mainly used to update polymorphic functions in global variable table. */
+void vtable_add_template(struct variable_table * vtable, struct var_type * vt, char * templatename);
+
+/* Delete a item(pointer of var_type) of given vtable. */
+void vtable_del(struct variable_table * vtable, struct var_decl_expr * e);
+
+/* Find the item(pointer of var_type) of given vtable using given var_decl_expr. */
+struct var_type * vtable_find_vde(struct variable_table * vtable, struct var_decl_expr * e);
+
+/* Find the item(pointer of var_type) of given vtable using given name. */
+struct var_type * vtable_find_char(struct variable_table * vtable, char * var_name);
+
+/*---------------------------------------------------------------------------
+                  Polymorphic expansion function prototypes
+ ---------------------------------------------------------------------------*/
+
+/* If ifexpand==true, expand var_decl_expr without command body. */
 struct var_decl_expr * template_expand_vde(struct var_type * expand, struct var_decl_expr* vde, char * template_typename,int ifexpand);
+
+/* Expand var_type */
+struct var_type * template_expand_vt(struct var_type * expand, struct var_type * vt, char * template_typename);
+
+/* Expand var_type_list. */
 struct var_type_list * template_expand_vtl(struct var_type * expand, struct var_type_list * vtl, char * template_typename);
 
-void print_binop(enum BinOpType op);
-void print_unop(enum UnOpType op);
-void print_expr(struct expr * e);
-char * print_vde(struct var_decl_expr * e);
-void print_vartype(struct var_type * vt);
+/* Test the whether the polynomial function can be expanded as limited copies. */
+int template_test();
+
+/*---------------------------------------------------------------------------
+                  Grammar tree output function prototypes
+ ---------------------------------------------------------------------------*/
+
+/* print given var_type_list as arguments of functions. */
 void print_expr_type_list_as_argument_types(struct expr_type_list * args);
+
+/* print given expr_type_list as arguments of calling functions. */
 void print_var_type_list_as_argument_types(struct var_type_list * args);
-void print_annon_var_decl_expr(struct var_decl_expr * e);
+
+/* print given var_decl_expr. */
+char * print_vde(struct var_decl_expr * e);
+
+/* print given var_type. */
+void print_vartype(struct var_type * vt);
+
+/* print given binary operator. */
+void print_binop(enum BinOpType op);
+
+/* print given unary operator. */
+void print_unop(enum UnOpType op);
+
+/* print given expr. */
+void print_expr(struct expr * e);
+
+/* print given cmd. */
 void print_cmd(struct cmd * c);
 
+
+/*---------------------------------------------------------------------------
+                        Other function prototypes
+ ---------------------------------------------------------------------------*/
+
+/* build nature number. */
 unsigned int build_nat(char * c, int len);
+
+/* allocate a new string. */
 char * new_str(char * str, int len);
 
 #endif // LANG_H_INCLUDED
