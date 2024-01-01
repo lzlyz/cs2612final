@@ -52,14 +52,6 @@
     return TM_FOR;
 }
 
-"local" {
-    return TM_LOCAL;
-}
-
-"in" {
-    return TM_IN;
-}
-
 "skip" {
     return TM_SKIP;
 }
@@ -85,15 +77,21 @@
 }
 
 [_A-Za-z][_A-Za-z0-9]* {
-    yylval.i = new_str(yytext, yyleng);
     // printf("A%dA",get_now_vtable()==NULL);
     // printf("%s %s %d\n",yytext,get_template_typename(),strcmp(yytext,get_template_typename()));
-    if(strcmp(yytext,get_template_typename())==0) return TM_TYPE_NAME;
-    struct var_type * res = vtable_find_char(get_now_vtable(),yytext);
+    if(strcmp(yytext,get_template_typename())==0){
+        return TM_TEMPLATE_TYPENAME;
+    }
+    yylval.i = new_str(yytext, yyleng);
+    struct var_type * res = vtable_find_char(get_now_vtable(),yytext)->vt;
     // printf("B%sB",yytext);
     // printf("C%sC\n",res->typename);
-    if(res == NULL) return TM_IDENT;
-    else return TM_VAR_NAME;
+    if(res == NULL){    
+        return TM_IDENT;
+    }
+    else{
+        return TM_VAR_NAME;
+    }
 }
 
 ";" {

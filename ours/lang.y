@@ -5,18 +5,20 @@
 	#include "lexer.h"
 	void yyerror(char *);
 	int yylex(void);
-  struct cmd * root;
+  struct cmd_list * root;
 %}
 
 %union {
 unsigned int n;
-char * i;
+char * s;
 struct expr * e;
 struct cmd * c;
+struct cmd_list * cl;
 struct var_type_list * vtl;
-struct expr_type_list * etl;
+struct expr_list * el;
 struct var_decl_expr * vde;
 struct var_type * vt;
+enum TypenameType * tt;
 void * none;
 }
 
@@ -24,7 +26,7 @@ void * none;
               Terminals
    ---------------------------------- */
 %token <n> TM_NAT
-%token <i> TM_IDENT
+%token <s> TM_IDENT
 %token <none> TM_LEFT_BRACE TM_RIGHT_BRACE
 %token <none> TM_LEFT_PAREN TM_RIGHT_PAREN
 %token <none> TM_SEMICOL TM_COMMA
@@ -38,29 +40,42 @@ void * none;
 %token <none> TM_PLUS TM_MINUS
 %token <none> TM_MUL TM_DIV TM_MOD
 %token <none> TM_UMINUS TM_DEREF TM_ADDROF
-// TM_TYPENAME is keyword "typename", TM_TYPE_NAME is the left type name used in declaration.
-%token <none> TM_TYPENAME TM_TEMPLATE TM_TYPE_NAME TM_VAR_NAME
+
+// TM_TYPENAME is keyword "typename", TM_TEMPLATE_TYPENAME is the left type name used in declaration.
+%token <none> TM_TYPENAME 
+%token <none> TM_TEMPLATE TM_TEMPLATE_TYPENAME TM_VAR_NAME
 
 /* ----------------------------------
               Nonterminals
    ---------------------------------- */
-%type <c> NT_WHOLE
+
+%type <cl> NT_WHOLE
+
+// GLOBAL_CMD and LOCAL_CMD are easy to understand. FOR_CMD is used for "for".
 %type <c> NT_GLOBAL_CMD
 %type <c> NT_LOCAL_CMD
 %type <c> NT_FOR_CMD
+%type <cl> NT_GLOBAL_CMD_LIST
+%type <cl> NT_LOCAL_CMD_LIST
+
+// EXPR0 EXPR1 are used for avoiding conflicts.
 %type <e> NT_EXPR0
 %type <e> NT_EXPR1
 %type <e> NT_EXPR
-%type <etl> NT_EXPR_TYPE_LIST
+%type <el> NT_EXPR_TYPE_LIST
 %type <vde> NT_NAMED_RIGHT_EXPR
-%type <vtl> NT_COMPLEX_ARGUMENT_TYPE_LIST
 %type <vde> NT_ANNON_RIGHT_EXPR
-%type <i> NT_TYPE_NAME
-%type <i> NT_TEMPLATE_HEAD
+
+// Complex argument type list allows NT_NAMED_RIGHT_EXPR and NT_ANNON_RIGHT_EXPR
+%type <vtl> NT_COMPLEX_ARGUMENT_TYPE_LIST
+
+// NT_TYPE_NAME is used for product INT and template type names.
+%type <tt> NT_TYPE_NAME
 
 // Nonterminals suffixed with "HEAD" are used to allocate a local variable table,
 // confirm the return type of functions and confirm the template type name of 
 // polymorphic functions before it starts reading commands.
+%type <s> NT_TEMPLATE_HEAD
 %type <vt> NT_FUNC_HEAD NT_PROC_HEAD NT_NAMED_HEAD NT_ANNON_HEAD
 %type <none> NT_FOR_HEAD NT_WHILE_HEAD NT_DO_HEAD NT_IF_HEAD NT_LOCAL_HEAD
 
@@ -82,36 +97,43 @@ void * none;
 
 
 /* ----------------------------------
-            Convention rules
+          Production Rules
    ---------------------------------- */
 %%
 
 NT_WHOLE:
-  NT_GLOBAL_CMD
+  NT_GLOBAL_CMD_LIST
   {
     $$ = ($1);
     root = $$;
   }
 ;
 
-NT_GLOBAL_CMD:
-  NT_GLOBAL_CMD TM_SEMICOL NT_GLOBAL_CMD
+NT_GLOBAL_CMD_LIST:
+  NT_GLOBAL_CMD TM_SEMICOL NT_GLOBAL_CMD_LIST
   {
-    $$ = (TSeq($1,$3));
+    $$ = TCLCons($1, $3);
   }
-| TM_VAR NT_NAMED_HEAD
+| NT_GLOBAL_CMD TM_SEMICOL
+  {
+    $$ = TCLCons($1, TCLNil());
+  }
+;
+
+NT_GLOBAL_CMD:
+  TM_VAR NT_NAMED_HEAD
   {
     $$ = (TDecl($2));
     vtable_add(get_now_vtable(), $2);
   }
-| NT_FUNC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
+| NT_FUNC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
     vtable_add_cmd(get_global_vtable(), $1, $3);
     $$ = (TFuncDecl($1));
     set_function_returntype(NULL);
     clear_now_vtable();
   }
-| NT_TEMPLATE_HEAD NT_FUNC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
+| NT_TEMPLATE_HEAD NT_FUNC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
     vtable_add_cmd(get_global_vtable(), $2, $4);
     vtable_add_template(get_global_vtable(), $2, $1);
@@ -120,13 +142,13 @@ NT_GLOBAL_CMD:
     set_function_returntype(NULL);
     clear_now_vtable();
   }
-| NT_PROC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
+| NT_PROC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
     vtable_add_cmd(get_global_vtable(), $1, $3);
     $$ = (TProcDecl($1));
     clear_now_vtable();
   }
-| NT_TEMPLATE_HEAD NT_PROC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
+| NT_TEMPLATE_HEAD NT_PROC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
     
     vtable_add_cmd(get_global_vtable(), $2, $4);
@@ -139,6 +161,17 @@ NT_GLOBAL_CMD:
   {
     $$ = $1
   } */
+;
+
+NT_LOCAL_CMD_LIST:
+  NT_LOCAL_CMD TM_SEMICOL NT_LOCAL_CMD_LIST
+  {
+    $$ = TCLCons($1, $3);
+  }
+| NT_LOCAL_CMD TM_SEMICOL
+  {
+    $$ = TCLCons($1, TCLNil());
+  }
 ;
 
 // LOCAL CMD 不能再使用函数定义
@@ -158,35 +191,30 @@ NT_LOCAL_CMD:
   }
 ;
 
-// FOR_CMD 应当拒绝掉分号规约 以及任何定义
+// FOR_CMD 应当拒绝掉分号规约 以及任何函数\过程定义
 NT_FOR_CMD:
   NT_EXPR TM_ASGNOP NT_EXPR
   {
     $$ = (TAsgn($1,$3));
   }
-| NT_IF_HEAD TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN TM_THEN TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE TM_ELSE TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
+| NT_IF_HEAD TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN TM_THEN TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE TM_ELSE TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
     $$ = (TIf($3,$7,$11));
     clear_now_vtable();
   }
-| NT_WHILE_HEAD TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN TM_DO TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
+| NT_WHILE_HEAD TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN TM_DO TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
     $$ = (TWhileDo($3,$7));
     clear_now_vtable();
   }
-| NT_DO_HEAD TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE TM_WHILE TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN
+| NT_DO_HEAD TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE TM_WHILE TM_LEFT_PAREN NT_EXPR TM_RIGHT_PAREN
   {
     $$ = (TDoWhile($3,$7));
     clear_now_vtable();
   }
-| NT_FOR_HEAD TM_LEFT_PAREN NT_FOR_CMD TM_SEMICOL NT_EXPR TM_SEMICOL NT_FOR_CMD TM_RIGHT_PAREN TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
+| NT_FOR_HEAD TM_LEFT_PAREN NT_FOR_CMD TM_SEMICOL NT_EXPR TM_SEMICOL NT_FOR_CMD TM_RIGHT_PAREN TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
     $$ = (TFor($3,$5,$7,$10));
-    clear_now_vtable();
-  }
-| NT_LOCAL_HEAD TM_IDENT TM_IN TM_LEFT_BRACE NT_LOCAL_CMD TM_RIGHT_BRACE
-  {
-    $$ = (TLocal($2,$5));
     clear_now_vtable();
   }
 | TM_CONTINUE
@@ -211,7 +239,7 @@ NT_FOR_CMD:
   }
 | NT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
   {
-    $$ = (TProc($1,TETLNil()));
+    $$ = (TProc($1,TELNil()));
   }
 | NT_EXPR TM_LEFT_PAREN NT_EXPR_TYPE_LIST TM_RIGHT_PAREN
   {
@@ -266,7 +294,7 @@ NT_EXPR:
   }
 | NT_EXPR TM_LEFT_PAREN TM_RIGHT_PAREN
   {
-    $$ = (TFunc($1,TETLNil()));
+    $$ = (TFunc($1,TELNil()));
   }
 | NT_EXPR TM_LEFT_PAREN NT_EXPR_TYPE_LIST TM_RIGHT_PAREN
   {
@@ -406,36 +434,36 @@ NT_ANNON_RIGHT_EXPR:
 NT_EXPR_TYPE_LIST:
   NT_EXPR TM_COMMA NT_EXPR_TYPE_LIST
   {
-	  $$ = TETLCons($1, $3); 
+	  $$ = TELCons($1, $3); 
   }
 | NT_EXPR
   {
-	  $$ = TETLCons($1, TETLNil()) ; 
+	  $$ = TELCons($1, TELNil()) ; 
   }
 ;
 
 NT_TYPE_NAME:
   TM_INTTYPE
   {
-    $$ = "int";
+    $$ = T_TYPENAME_INT;
   }
-| TM_TYPE_NAME
+| TM_TEMPLATE_TYPENAME
   {
-    $$ = $1
+    $$ = T_TYPENAME_TEMPLATE;
   }
 
 NT_TEMPLATE_HEAD:
   TM_TEMPLATE TM_LT TM_TYPENAME TM_IDENT TM_GT
   {
     set_template_typename($4);
-    $$ = $4
+    $$ = $4;
   }
 
 NT_FUNC_HEAD:
   TM_FUNC NT_NAMED_HEAD
   {
 
-    $$ = $2
+    $$ = $2;
     vtable_add(get_global_vtable(), $2);
 
     set_function_returntype(TFuncReturnType($2));

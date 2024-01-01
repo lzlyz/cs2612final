@@ -3,28 +3,34 @@
 #include "lexer.h"
 #include "parser.h"
 
-extern struct cmd * root;
+extern struct cmd_list * root;
 int yyparse();
 
 int main(int argc, char * * argv) {
-  init_global_vtable();
   if (argc == 1) {
-    printf("Error, not enough arguments!\n");
+    printf("[Error][main.c] Not enough arguments!\n");
     return 0;
   }
   if (argc >= 3) {
-    printf("Error, too many arguments!\n");
+    printf("[Error][main.c] Too many arguments!\n");
     return 0;
   }
   yyin = fopen(argv[1], "rb");
   if (yyin == NULL) {
-    printf("File %s can't be opened.\n", argv[1]);
+    printf("[Error][main.c] File %s can't be opened.\n", argv[1]);
     return 0;
   }
-  printf("Let's do yyparser!\n");
+  printf("[Info][main.c] Let's do yyparser! This is the grammar tree with polymorphic functions.\n");
+  // Firstly initialize variable table!
+  init_global_vtable();
+  // Do yyparse!
   yyparse();
   fclose(yyin);
-  print_cmd(root);
+  // Print grammar tree.
+  print_cmd_list(root);
+  printf("[Info][main.c] Then we'll test if the polymorphic function can be expanded as limited copies. \n");
+  // Polymorphic expansion test.
+  if(polymorphic_expansion_test()) return 0;
   
   return 0;
 }

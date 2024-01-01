@@ -1,2 +1,24 @@
 var int (*a(int * b))(int,int);
-a = a+1
+a = a+1;
+
+func void printint(int a){
+    return;
+}
+
+func void g(){
+    var int a;
+    var int * b;
+    a = f<int>(1);
+    b = f<int*>(&a);
+}
+
+template <typename T> func T f(T a){
+    g();
+    return a;
+}
+
+T g()
+->f<T*>
+
+T f()
+->g<T>
