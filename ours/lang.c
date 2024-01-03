@@ -608,6 +608,7 @@ int pointer_of_what(struct var_decl_expr * vde){
 
 /* Compare whether two var_decl_expr are the same. If same, return 1, else 0. */
 int vde_cmp(struct var_decl_expr * e1,struct var_decl_expr * e2){
+  if(e1==e2) return 1;
   if(e1->t!=e2->t) return 0;
   switch(e1->t){
   case T_INT_TYPE:
@@ -621,7 +622,7 @@ int vde_cmp(struct var_decl_expr * e1,struct var_decl_expr * e2){
 
 /* Compare whether two var_type are the same. If same, return 1, else 0. */
 int vt_cmp(struct var_type * vt1, struct var_type * vt2){
-  return vt1->left_type==vt2->left_type&&vde_cmp(vt1->vde,vt2->vde);
+  return vt1==vt2||(vt1->left_type==vt2->left_type&&vde_cmp(vt1->vde,vt2->vde));
 }
 
 /* Compare whether two var_type_list are the same. If same, return 1, else 0. */
@@ -730,7 +731,7 @@ void vtable_add_list(struct variable_table * vtable, struct var_type_list * vtl)
 /* Find the correct item (require function type) in given variable table (mostly global variable table) and modify its cmd body. 
    This is mainly used to update functions in global variable table. */
 void vtable_add_cmd(struct variable_table * vtable, struct var_type * vt, struct cmd * c){
-  struct vtable_item * res = vtable_find_vde(vtable, vt->vde);
+  struct vtable_item * res = vtable_find_vt(vtable, vt);
   if(res==NULL){
     printf("[Error][Type check] not find the item to add cmd, vartype:");
     print_vartype(vt);
@@ -747,7 +748,7 @@ void vtable_add_cmd(struct variable_table * vtable, struct var_type * vt, struct
 /* Find the correct item (require function type) in given variable table (mostly global variable table) and modify its templatename. 
    This is mainly used to update polymorphic functions in global variable table. */
 void vtable_add_template(struct variable_table * vtable, struct var_type * vt, char * templatename){
-  struct vtable_item * res = vtable_find_vde(vtable, vt->vde);
+  struct vtable_item * res = vtable_find_vt(vtable, vt);
   if(res==NULL){
     printf("[Error][Type check] not find the item to add cmd, vartype:");
     print_vartype(vt);
@@ -763,7 +764,7 @@ void vtable_add_template(struct variable_table * vtable, struct var_type * vt, c
 
 /* vtable set visited */
 void vtable_set_visited(struct variable_table * vtable, struct var_type * vt, int visited){
-  struct vtable_item * res = vtable_find_vde(vtable, vt->vde);
+  struct vtable_item * res = vtable_find_vt(vtable, vt);
   res->visited=visited;
 }
 
@@ -772,9 +773,9 @@ void vtable_del(struct variable_table * vtable, struct var_decl_expr * e){
   dictionary_unset(vtable->dict, get_vde_name(e));
 }
 
-/* Find the item(pointer of var_type) of given vtable using given var_decl_expr. */
-struct vtable_item * vtable_find_vde(struct variable_table * vtable, struct var_decl_expr * e){
-  return vtable_find_char(vtable,get_vde_name(e));
+/* Find the item(pointer of var_type) of given vtable using given var_type. */
+struct vtable_item * vtable_find_vt(struct variable_table * vtable, struct var_type * vt){
+  return vtable_find_char(vtable,get_vde_name(vt->vde));
 }
 
 /* Find the item(pointer of var_type) of given vtable using given name. */
@@ -788,32 +789,17 @@ struct vtable_item * vtable_find_char(struct variable_table * vtable, char * var
 /*---------------------------------------------------------------------------
                     Polymorphic expansion private functions
  ---------------------------------------------------------------------------*/
+ 
+/*---------------------------------------------------------------------------
+Polymorphic expansion private functions 1: Polymorphic expansion dictionary(PED)
+ ---------------------------------------------------------------------------*/
 
-// 两者同时进行！polumorphic
+/**
+  @brief    insatnce_function.
 
-// 展开的本质是展开INSTANCE语句为EXPR，而非函数调用语句，于是说，我们只需要对INSTANCE语句进行展开，那么原理就是枚举EXPR即可！
-
-// 但是main函数也会正常调用其他非多态函数，这时候该怎么办呢？
-
-// 也就是说，对于一个FUNC语句，我们先对EXPR进行递归，找到需要展开的INSTANCE，然后展开INSTANCE，然后再执行函数调用，此时进入展开好的函数开始查找
-
-// 那么小伙伴们也会问了，之前实现的展开函数的代码并没有展开command body，这是肿么会是呢？
-
-// 这个小编也不知道呢？
-
-// 我们如下实现展开过程
-
-// 首先枚举EXPR,遇到INSTANCE开始展开，从对应函数名字。遇到无限递归的时候，在第二次访问函数结束后再终止递归即可。
-
-//注：多态函数无法定义函数指针，也就是说，expr<var_type>出现的条件一定要求expr是一个VAR
-// 我们可以利用这一点，
-
-//我们展开的时候需要建立从<string, var_type>到<instanced polymorphic function>，这个映射难以建立，我打算直接开个数组枚举算了，我真的曹乐，但是也很麻烦。
-//dictionary库只支持从char*->void*的映射，内部使用strcmp实现的，我真是曹乐，要是CPP就可以用map了。
-
+  Used for store expanded polymorphic functions.
+ */
 dictionary * polymorphic_expansion_dict; // 这个字典从 string 映射到一个 var_type_list
-
-// FUNCTIONS OF POLYMORPHIC EXPANSION
 
 struct instance_function{
   struct var_type * instance_vt;
@@ -896,8 +882,11 @@ void ped_unfold_function_declare(const struct cmd_list * root){
   }
 }
 
+/*---------------------------------------------------------------------------
+        Polymorphic expansion private functions 2: Visited List(VisL)
+ ---------------------------------------------------------------------------*/
 
-// function_stack 被用于储存当前已经调用了哪些函数，对于多态函数，只需要记录多态函数本身即可，但是这里存在一个难点
+// visited_list 被用于储存当前已经调用了哪些函数，对于多态函数，只需要记录多态函数本身即可，但是这里存在一个难点
 // 由于我们前面的关系 INSTANCE 在 函数调用之前，因此，INSTANCE会把多态函数转换为实例函数，这就产生了一个难点。
 // 解决方法是，在实例化的时候，我们就已经需要进入多态函数拷贝副本进行实例化了，于是可以这样跳过
 
@@ -916,16 +905,21 @@ template <typename T> func T f(T a){
 // 目前只需要应对无穷递归的情况即可！我们还是把这两步分开吧！
 // 首先进行展开检查，展开检查对每个函数进行递归，在一个多态函数内，应当记录当前的多态函数，然后考虑实例化，
 
-struct function_stack{
-  int stack_len;
-  struct var_type_list * stack_of_type;
-  struct var_type_list * stack_of_function;
+enum template_typename_type{
+  T_ORIGINAL_TEMPLATE_TYPENAME=0,
+  T_MODIFIED_TEMPLATE_TYPENAME
 };
 
-/* Allocate a new pointer of function_stack. */
-struct function_stack * new_function_stack_ptr() {
-  struct function_stack * res =
-    (struct function_stack *) malloc(sizeof(struct function_stack));
+struct visited_list{
+  enum template_typename_type instance_type;
+  struct var_type * function;  
+  struct visited_list * next;
+};
+
+/* Allocate a new pointer of visited_list. */
+struct visited_list * new_visited_queue_ptr() {
+  struct visited_list * res =
+    (struct visited_list *) malloc(sizeof(struct visited_list));
   if (res == NULL) {
     printf("Failure in malloc.\n");
     exit(0);
@@ -933,45 +927,65 @@ struct function_stack * new_function_stack_ptr() {
   return res;
 }
 
-
 /* . */
-struct visited_array * TFuncStack(){
-  struct function_stack * res = new_function_stack_ptr();
-  res -> stack_len = 0;
-  res -> stack_of_function = NULL;
-  res -> stack_of_type = NULL;
+struct visited_list * TVisitedList(struct var_type * function, enum template_typename_type instance_type, struct visited_list * next){
+  struct visited_list * res = new_visited_queue_ptr();
+  res -> function = function;
+  res -> instance_type = instance_type;
+  res -> next = next;
   return res;
 }
 
-void func_stack_push(struct function_stack * fs, const struct var_type * function, const struct var_type * type){
-  fs->stack_of_function = TVTLCons(function,fs->stack_of_function);
-  fs->stack_of_type = TVTLCons(type,fs->stack_of_type);
-  fs->stack_len++;
+void visl_add(struct visited_list * visl, const struct var_type * function, enum template_typename_type instance_type){
+  struct visited_list * visl0;
+  for(visl0=visl;visl0->next!=NULL;visl0=visl0->next);
+  visl0->next=TVisitedList(function,instance_type,NULL);
 }
 
-int func_stack_pop(struct function_stack * fs){
-  if(fs->stack_len==0) return 0;
-  struct var_type_list * fl = fs->stack_of_function;
-  struct var_type_list * tl = fs->stack_of_type;
-  fs->stack_of_function = fs->stack_of_function->next;
-  fs->stack_of_type = fs->stack_of_type->next;
-  free(fl);
-  free(tl);
-  return 1;
+struct visited_list * visl_new(const struct var_type * function, enum template_typename_type instance_type){
+  return TVisitedList(function,instance_type,NULL);
 }
 
-void func_stack_delete(struct function_stack * fs){
-  while(func_stack_pop(fs));
-  free(fs);
+void visl_delete(struct visited_list * visl){
+  struct visited_list * visl0;
+  for(visl0=visl;visl0!=NULL;visl0=visl0->next){
+    free(visl0);
+  }
 }
 
-int PFE_stack_exist(struct function_stack * fs, struct var_type * function, struct var_type * type){
-  struct var_type_list * fl = fs->stack_of_function;
-  struct var_type_list * tl = fs->stack_of_type;
-  int len = fs->stack_len;
-  while(len--) if(vt_cmp(function,fl->vt)&&vt_cmp(type,tl->vt)) return 1;
+int visl_exist(struct visited_list * visl, struct var_type * function, enum template_typename_type instance_type){
+  struct visited_list * visl0;
+  for(visl0=visl;visl0!=NULL;visl0=visl0->next){
+    if(vt_cmp(function,visl0->function)&&instance_type==visl0->instance_type) return 1;
+  }
   return 0;
 }
+
+/*---------------------------------------------------------------------------
+      Polymorphic expansion private functions 3: Polymorphic Test(PT)
+ ---------------------------------------------------------------------------*/
+
+// 两者同时进行！polumorphic
+
+// 展开的本质是展开INSTANCE语句为EXPR，而非函数调用语句，于是说，我们只需要对INSTANCE语句进行展开，那么原理就是枚举EXPR即可！
+
+// 但是main函数也会正常调用其他非多态函数，这时候该怎么办呢？
+
+// 也就是说，对于一个FUNC语句，我们先对EXPR进行递归，找到需要展开的INSTANCE，然后展开INSTANCE，然后再执行函数调用，此时进入展开好的函数开始查找
+
+// 那么小伙伴们也会问了，之前实现的展开函数的代码并没有展开command body，这是肿么会是呢？
+
+// 这个小编也不知道呢？
+
+// 我们如下实现展开过程
+
+// 首先枚举EXPR,遇到INSTANCE开始展开，从对应函数名字。遇到无限递归的时候，在第二次访问函数结束后再终止递归即可。
+
+//注：多态函数无法定义函数指针，也就是说，expr<var_type>出现的条件一定要求expr是一个VAR
+// 我们可以利用这一点，
+
+//我们展开的时候需要建立从<string, var_type>到<instanced polymorphic function>，这个映射难以建立，我打算直接开个数组枚举算了，我真的曹乐，但是也很麻烦。
+//dictionary库只支持从char*->void*的映射，内部使用strcmp实现的，我真是曹乐，要是CPP就可以用map了。
 
 int vt_exists_template_typename(const struct var_type * vt);
 
@@ -1004,186 +1018,314 @@ int vt_is_original_template_typename(const struct var_type * vt){
   return vt->left_type==T_TYPENAME_TEMPLATE&&vt->vde->t==T_INT_TYPE;
 }
 
-void PT_next_call(struct function_stack * fs, struct var_type * polymorphic_function, struct var_type * instance_type){
-  if
+void PT_next_call(struct visited_list * visl, enum template_typename_type last_type, struct var_type * polymorphic_function, struct var_type * next_type){
+  // if next call does not carry a tempalte typename, it's useless to take it to go.
+  if(!vt_exists_template_typename(next_type)) return;
+
+  // Decide the next instance type.
+  enum template_typename_type next_template_type;
+  if(last_type==T_ORIGINAL_TEMPLATE_TYPENAME&&vt_is_original_template_typaname(next_type)){
+    next_template_type = T_ORIGINAL_TEMPLATE_TYPENAME;
+  }
+  else {
+    next_template_type = T_MODIFIED_TEMPLATE_TYPENAME;
+  }
+  
+  if(vt_cmp(visl->function,polymorphic_function)){
+    if(next_template_type==T_MODIFIED_TEMPLATE_TYPENAME){
+      printf("[Error][Polymorphic Expansion] A polymorphic function can not be expaned to limited copies, the function:");
+      print_vartype(polymorphic_function);
+    }
+  }
+  else{
+    // Next call should check if the function pass the polymorphic expansion test firstly.
+    struct vtable_item * queried_function = vtable_find_vt(get_global_vtable(),polymorphic_function);
+    if(queried_function==NULL||queried_function->visited==0){    
+      FT_polymorphic_test(polymorphic_function);
+    }
+
+    // Then next call should consider whether this function is in visited_list.
+    if(visl_exist(visl,polymorphic_function,next_type)) return;
+
+    // Go to next function !
+    visl_add(visl,polymorphic_function,next_template_type);
+    PT_cmd_list(visl,next_template_type,polymorphic_function->vde->d.FUNC_TYPE.body);
+  }
 }
 
-void PT_expr(struct function_stack * fs, struct expr * e){
+void PT_expr(struct visited_list * visl, enum template_typename_type instance_type, struct expr * e){
   switch(e->t){  
     case T_BINOP:
-      PT_expr(fs, e->d.BINOP.left);
-      PT_expr(fs, e->d.BINOP.right);
+      PT_expr(visl, instance_type, e->d.BINOP.left);
+      PT_expr(visl, instance_type, e->d.BINOP.right);
     case T_UNOP:
-      PT_expr(fs, e->d.UNOP.arg);
+      PT_expr(visl, instance_type, e->d.UNOP.arg);
     case T_DEREF:
-      PT_expr(fs, e->d.DEREF.arg);
+      PT_expr(visl, instance_type, e->d.DEREF.arg);
     case T_ADDROF:
-      PT_expr(fs, e->d.ADDROF.arg);
+      PT_expr(visl, instance_type, e->d.ADDROF.arg);
     case T_INSTANCE:
-      PFE_polymorphic_test(e->d.INSTANCE.func);
-      PT_next_call(fs, e->d.INSTANCE.func, e->d.INSTANCE.vt);
+      PT_next_call(visl, instance_type, e->d.INSTANCE.func, e->d.INSTANCE.vt);
     case T_FUNC:
-      PT_expr(fs, e->d.FUNC.func);
-      PT_expr_list(fs, e->d.FUNC.args);
+      PT_expr(visl, instance_type, e->d.FUNC.func);
+      PT_expr_list(visl, instance_type, e->d.FUNC.args);
   }
 }
 
-void PT_expr_list(struct function_stack * fs, struct expr_list * el){
+void PT_expr_list(struct visited_list * visl, enum template_typename_type instance_type, struct expr_list * el){
   if(el==NULL) return;
-  PT_expr(fs, el->e);
-  PT_expr_list(fs, el->next);
+  PT_expr(visl, instance_type, el->e);
+  PT_expr_list(visl, instance_type, el->next);
 }
 
-void PT_cmd(struct function_stack * fs, struct cmd * c){
+void PT_cmd(struct visited_list * visl, enum template_typename_type instance_type, struct cmd * c){
   switch(c->t){
     case T_ASGN:
-      PT_expr(fs, c->d.ASGN.left);
-      PT_expr(fs, c->d.ASGN.left);
+      PT_expr(visl, instance_type, c->d.ASGN.left);
+      PT_expr(visl, instance_type, c->d.ASGN.left);
       break;
     case T_IF:
-      PT_expr(fs, c->d.IF.cond);
-      PT_cmd_list(fs, c->d.IF.left);
-      PT_cmd_list(fs, c->d.IF.right);
+      PT_expr(visl, instance_type, c->d.IF.cond);
+      PT_cmd_list(visl, instance_type, c->d.IF.left);
+      PT_cmd_list(visl, instance_type, c->d.IF.right);
       break;
     case T_DOWHILE:
-      PT_cmd_list(fs, c->d.DOWHILE.body);
-      PT_expr(fs, c->d.DOWHILE.cond);
+      PT_cmd_list(visl, instance_type, c->d.DOWHILE.body);
+      PT_expr(visl, instance_type, c->d.DOWHILE.cond);
       break;
     case T_WHILEDO:
-      PT_expr(fs, c->d.WHILEDO.cond);
-      PT_cmd_list(fs, c->d.WHILEDO.body);
+      PT_expr(visl, instance_type, c->d.WHILEDO.cond);
+      PT_cmd_list(visl, instance_type, c->d.WHILEDO.body);
       break;
     case T_FOR:
-      PT_cmd(fs, c->d.FOR.init);
-      PT_expr(fs, c->d.FOR.cond);
-      PT_cmd_list(fs, c->d.FOR.body);
-      PT_cmd(fs, c->d.FOR.nxt);
+      PT_cmd(visl, instance_type, c->d.FOR.init);
+      PT_expr(visl, instance_type, c->d.FOR.cond);
+      PT_cmd_list(visl, instance_type, c->d.FOR.body);
+      PT_cmd(visl, instance_type, c->d.FOR.nxt);
       break;
     case T_RETURN:
-      PT_expr(fs, c->d.RETURN.e);
+      PT_expr(visl, instance_type, c->d.RETURN.e);
       break;
     case T_PROC:
-      PT_expr_list(fs, c->d.PROC.args);
+      PT_expr_list(visl, instance_type, c->d.PROC.args);
       break;
   }
 }
 
-void PT_cmd_list(struct function_stack * fs, struct cmd_list * cl){
+void PT_cmd_list(struct visited_list * visl, enum template_typename_type instance_type, struct cmd_list * cl){
   if(cl==NULL) return;
-  PT_cmd(fs,cl->c);
-  PT_cmd_list(fs,cl->next);
+  PT_cmd(visl,instance_type,cl->c);
+  PT_cmd_list(visl,instance_type,cl->next);
 }
 
-void PFE_polymorphic_test(struct var_type * polymorphic_function){
-  struct vtable_item * instanced_function = vtable_find_vde(get_global_vtable(),polymorphic_function->vde);
+/*---------------------------------------------------------------------------
+Polymorphic expansion private functions 4: Polymorphic function expanding(FT)
+ ---------------------------------------------------------------------------*/
+
+const int POLYMORPHIC_MAX_COPIES=9999, POLYMORPHIC_MAX_COPIES_STELEN=4; //POLYMORPHIC_MAX_COPIES_STELEN=log10(POLYMORPHIC_MAX_COPIES)+1;
+char * alloc_new_function_name(const char * polymorphic_function_name){
+  int i;
+  char * new_name;
+  for(i=1;i<=POLYMORPHIC_MAX_COPIES;i++){
+    new_name = new_str(polymorphic_function_name,strlen(polymorphic_function_name)+POLYMORPHIC_MAX_COPIES_STELEN);
+    sprintf(new_name,"%s%d",new_name,i);
+    if(!vtable_find_char(get_global_vtable(),new_name)){
+      break;
+    }
+    free(new_name);
+  }
+  if(i>POLYMORPHIC_MAX_COPIES){
+    printf("[Error][Polymorphic expansion] Now we do not support expand copies over %d. ", POLYMORPHIC_MAX_COPIES);
+    exit(0);
+  }
+  return new_name;
+}
+
+struct var_type * PFE(struct var_type * polymorphic_function, struct var_type * instance_type);
+
+struct expr_list * PFE_expr_list(const struct var_type * instance_type, const struct expr_list * el);
+
+struct expr * PFE_expr(const struct var_type * instance_type, const struct expr * e){
+  switch(e->t){  
+    case T_BINOP:
+      return TBinOp( e->d.BINOP.op,PFE_expr(instance_type, e->d.BINOP.left),PFE_expr(instance_type, e->d.BINOP.right));
+    case T_UNOP:
+      return TUnOp(e->d.UNOP.op,PFE_expr(instance_type, e->d.UNOP.arg));
+    case T_DEREF:
+      return TDeref(PFE_expr(instance_type, e->d.DEREF.arg));
+    case T_ADDROF:
+      return TAddrOf(PFE_expr(instance_type, e->d.ADDROF.arg));
+    case T_INSTANCE:
+      return TVar(PFE(e->d.INSTANCE.func,template_expand_vt(instance_type, e->d.INSTANCE.vt))->vde->d.FUNC_TYPE.name);
+    case T_FUNC:
+      return TFunc(PFE_expr(instance_type, e->d.FUNC.func),PFE_expr_list(instance_type, e->d.FUNC.args));
+    default:
+      return e;
+  }
+}
+
+struct expr_list * PFE_expr_list(const struct var_type * instance_type, const struct expr_list * el){
+  if(el==NULL) return TELNil();
+  else return TELCons(PFE_expr(instance_type, el->e),PFE_expr_list(instance_type, el->next));
+}
+
+struct cmd * PFE_cmd(const struct var_type * instance_type, struct cmd * c){
+  switch(c->t){
+    case T_DECL:
+      return TDecl(template_expand_vt(instance_type, c->d.DECL.vt));
+    case T_ASGN:
+      return TAsgn(PFE_expr(instance_type, c->d.ASGN.left),PFE_expr(instance_type, c->d.ASGN.left));
+    case T_IF:
+      return TIf(PFE_expr(instance_type, c->d.IF.cond),PFE_cmd_list(instance_type, c->d.IF.left),PFE_cmd_list(instance_type, c->d.IF.right));
+    case T_DOWHILE:
+      return TDoWhile(PFE_cmd_list(instance_type, c->d.DOWHILE.body),PFE_expr(instance_type, c->d.DOWHILE.cond));
+    case T_WHILEDO:
+      return TWhileDo(PFE_expr(instance_type, c->d.WHILEDO.cond),PFE_cmd_list(instance_type, c->d.WHILEDO.body));
+    case T_FOR:
+      return TFor(PFE_cmd(instance_type, c->d.FOR.init),PFE_expr(instance_type, c->d.FOR.cond),
+          PFE_cmd_list(instance_type, c->d.FOR.body),PFE_cmd(instance_type, c->d.FOR.nxt));
+    case T_RETURN:
+      return TReturn(PFE_expr(instance_type, c->d.RETURN.e));
+    case T_PROC:
+      return TProc(PFE_expr(instance_type, c->d.PROC.proc),PFE_expr_list(instance_type, c->d.PROC.args));
+    default:
+      return c;
+  }
+}
+
+struct cmd_list * PFE_cmd_list(const struct var_type * instance_type, const struct cmd_list * cl){
+  if(cl==NULL) return TCLNil();
+  else return TCLCons(PFE_cmd(instance_type, cl->c),PFE_cmd_list(instance_type, cl->next));
+}
+
+struct var_type * PFE(struct var_type * polymorphic_function, struct var_type * instance_type){
+  struct var_type * instanced_function = ped_find(polymorphic_function->vde->d.FUNC_TYPE.name,instance_type);
+  if(instanced_function!=NULL){
+    return instanced_function;
+  }
+  struct var_type * new_function = template_expand_vt(instance_type, polymorphic_function);
+  new_function->vde->d.FUNC_TYPE.name=alloc_new_function_name(new_function->vde->d.FUNC_TYPE.name);
+  warning// here should add some code to avoid such situatioon
+  /*
+  T f(){
+    g<int>;
+  }
+  T g(){
+    f<int>;
+  }
+  */
+  new_function->vde->d.FUNC_TYPE.body=PFE_cmd_list(instance_type, new_function->vde->d.FUNC_TYPE.body);
+  ped_add(polymorphic_function->vde->d.FUNC_TYPE.name,instance_type,new_function);
+  return new_function;
+}
+
+/*---------------------------------------------------------------------------
+      Polymorphic expansion private functions 5: Function traversing(FT)
+ ---------------------------------------------------------------------------*/
+
+/* Bridege from FT to PT. Do PT for a polymorphic function. */
+void FT_polymorphic_test(struct var_type * polymorphic_function){
+  struct vtable_item * instanced_function = vtable_find_vt(get_global_vtable(),polymorphic_function);
   if(instanced_function!=NULL&&instanced_function->visited==1){ 
     return;
   }
-  struct function_stack * fs = TFUNCStack();
-  func_stack_push(fs,polymorphic_function,TIntType(""));
-  PT_cmd_list(fs,polymorphic_function->vde->d.FUNC_TYPE.body);
-}
-
-struct var_type * PFE_polymorphic_expand(){
-
+  struct visited_list * visl = visl_new(polymorphic_function,T_ORIGINAL_TEMPLATE_TYPENAME);
+  vtable_set_visited(get_global_vtable(),polymorphic_function,1);
+  PT_cmd_list(visl,T_ORIGINAL_TEMPLATE_TYPENAME,polymorphic_function->vde->d.FUNC_TYPE.body);
 }
 
 /* change given instance expr. */
-void PFE_expr_expand(struct expr * e){
-  struct var_type * instance_function = ped_find(e->d.INSTANCE.func->vt->vde->d.FUNC_TYPE.name,e->d.INSTANCE.vt);
-  if(instance_function==NULL){
-    PFE_polymorphic_test(e->d.INSTANCE.func);
-    instance_function = PFE_polymorphic_expand(e->d.INSTANCE.func, e->d.INSTANCE.vt);
-    ped_add(e->d.INSTANCE.func->vt->vde->d.FUNC_TYPE.name,e->d.INSTANCE.func,instance_function);
-  }
+void FT_expr_expand(struct expr * e){
+  struct var_type * instance_function = PFE(e->d.INSTANCE.func, e->d.INSTANCE.vt);
   e->t = T_VAR;
   e->d.VAR.name = instance_function->vde->d.FUNC_TYPE.name;
   e->vt = instance_function;
 }
 
-void PFE_expr_list(struct expr_list * el);
+void FT_expr_list(struct expr_list * el);
 
-void PFE_visit_function(struct var_type * func);
+void FT_visit_function(struct var_type * func);
 
 /* return 1 if instance exists. */
-int PFE_expr(const struct expr * e){
+int FT_expr(const struct expr * e){
   switch(e->t){  
     case T_BINOP:
-      PFE_expr(e->d.BINOP.left);
-      PFE_expr(e->d.BINOP.right);
+      FT_expr(e->d.BINOP.left);
+      FT_expr(e->d.BINOP.right);
       return 0;
     case T_UNOP:
-      PFE_expr(e->d.UNOP.arg);
+      FT_expr(e->d.UNOP.arg);
       return 0;
     case T_DEREF:
-      return PFE_expr(e->d.DEREF.arg);
+      return FT_expr(e->d.DEREF.arg);
     case T_ADDROF:
-      return PFE_expr(e->d.ADDROF.arg);
+      return FT_expr(e->d.ADDROF.arg);
     case T_INSTANCE:
-      PFE_expr_expand(e);
+      FT_expr_expand(e);
       return 1;
     case T_FUNC:
-      if(!PFE_expr(e->d.FUNC.func)&&!vtable_find_vde(get_global_vtable(),e->vt->vde)->visited) 
-        PFE_visit_function(e->vt);
-      PFE_expr_list(e->d.FUNC.args);
+      if(!FT_expr(e->d.FUNC.func)&&!vtable_find_vt(get_global_vtable(),e->vt)->visited) 
+        FT_visit_function(e->vt);
+      FT_expr_list(e->d.FUNC.args);
       return 0;
   }
   return 0;
 }
+
 // 多态函数实例化的时候就会创建模板，因此对于多态函数有两种处理需求：1.实际参与调用了多态函数，2，仅仅对多态函数进行了实例化。
 // 由于在type check的过程中，我们已经给expr记录了其类型，那么我们只需要考虑T_INSTANCE和T_FUNC了
 // 对于普通函数，肯定只能通过T_FUNC继续进行检查；那么对于多态函数，我们只需要让T_FUNC不再往下递归expr即可，这样T_FUNC和T_INSTANCE的冲突就解决了。
 
-void PFE_expr_list(struct expr_list * el){
+void FT_expr_list(struct expr_list * el){
   if(el==NULL) return;
-  PFE_expr(el->e);
-  PFE_expr_list(el->next);
+  FT_expr(el->e);
+  FT_expr_list(el->next);
 }
 
-void PFE_cmd(struct cmd * c){
+void FT_cmd(struct cmd * c){
   switch(c->t){
     case T_ASGN:
-      PFE_expr(c->d.ASGN.left);
-      PFE_expr(c->d.ASGN.left);
+      FT_expr(c->d.ASGN.left);
+      FT_expr(c->d.ASGN.left);
       break;
     case T_IF:
-      PFE_expr(c->d.IF.cond);
-      PFE_cmd_list(c->d.IF.left);
-      PFE_cmd_list(c->d.IF.right);
+      FT_expr(c->d.IF.cond);
+      FT_cmd_list(c->d.IF.left);
+      FT_cmd_list(c->d.IF.right);
       break;
     case T_DOWHILE:
-      PFE_cmd_list(c->d.DOWHILE.body);
-      PFE_expr(c->d.DOWHILE.cond);
+      FT_cmd_list(c->d.DOWHILE.body);
+      FT_expr(c->d.DOWHILE.cond);
       break;
     case T_WHILEDO:
-      PFE_expr(c->d.WHILEDO.cond);
-      PFE_cmd_list(c->d.WHILEDO.body);
+      FT_expr(c->d.WHILEDO.cond);
+      FT_cmd_list(c->d.WHILEDO.body);
       break;
     case T_FOR:
-      PFE_cmd(c->d.FOR.init);
-      PFE_expr(c->d.FOR.cond);
-      PFE_cmd_list(c->d.FOR.body);
-      PFE_cmd(c->d.FOR.nxt);
+      FT_cmd(c->d.FOR.init);
+      FT_expr(c->d.FOR.cond);
+      FT_cmd_list(c->d.FOR.body);
+      FT_cmd(c->d.FOR.nxt);
       break;
     case T_RETURN:
-      PFE_expr(c->d.RETURN.e);
+      FT_expr(c->d.RETURN.e);
       break;
     case T_PROC:
-      PFE_next_call(c->d.PROC.proc);
-      PFE_expr_list(c->d.PROC.args);
+      FT_next_call(c->d.PROC.proc);
+      FT_expr_list(c->d.PROC.args);
       break;
   }
 }
 
-void PFE_cmd_list(struct cmd_list * cl){
+void FT_cmd_list(struct cmd_list * cl){
   if(cl==NULL) return;
-  PFE_cmd(cl->c);
-  PFE_cmd_list(cl->next);
+  FT_cmd(cl->c);
+  FT_cmd_list(cl->next);
 }
 
-void PFE_visit_function(struct var_type * func){
+void FT_visit_function(struct var_type * func){
   vtable_set_visited(get_global_vtable(),func,1);
-  PFE_cmd_list(func->vde->d.FUNC_TYPE.body);
+  FT_cmd_list(func->vde->d.FUNC_TYPE.body);
 }
  
 /*--------------------------------------------------------------------------*\
@@ -1238,7 +1380,7 @@ struct var_type_list * template_expand_vtl(struct var_type * expand, struct var_
 
 
 /* Test the whether the polymorphic function can be expanded as limited copies. */
-int polymorphic_expansion_test(){
+int polymorphic_expansion_test(const struct cmd_list * root){
   struct var_type * main_vt=vtable_find_char(get_global_vtable(),"main")->vt;
   if(main_vt==NULL){
     printf("[Warning][Polymorphic expansion test] No \"main\" Function!");
@@ -1253,7 +1395,8 @@ int polymorphic_expansion_test(){
     return 1;
   }
   // initialize polumorphic expansion test stack.
-  PFE_visit_function(main_vt);
+  FT_visit_function(main_vt);
+  ped_unfold_function_declare(root);
   return 0;
 }
 
@@ -1483,6 +1626,8 @@ void print_expr(struct expr * e) {
   // print_vartype(e->vt);
 }
 
+int do_output_template=1;
+
 /* print given cmd. */
 void print_cmd(struct cmd * c) {
   switch (c -> t) {
@@ -1493,6 +1638,7 @@ void print_cmd(struct cmd * c) {
     indent --;
     break;
   case T_FUNCDECL:
+    if(!do_output_template&&c->d.FUNCDECL.vt->vde->d.FUNC_TYPE.templatename!=NULL) break;
     pprintf("Function Declare:\n");
     indent ++;
     print_vartype(c->d.FUNCDECL.vt);
@@ -1604,6 +1750,11 @@ void print_cmd_list(struct cmd_list * cl){
   }
   print_cmd(cl->c);
   print_cmd_list(cl->next);
+}
+
+void set_template_output(int output_template){
+  do_output_template=output_template;
+  return;
 }
 
 /*---------------------------------------------------------------------------

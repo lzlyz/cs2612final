@@ -30,7 +30,10 @@ int main(int argc, char * * argv) {
   print_cmd_list(root);
   printf("[Info][main.c] Then we'll test if the polymorphic function can be expanded as limited copies. \n");
   // Polymorphic expansion test.
-  if(polymorphic_expansion_test()) return 0;
+  polymorphic_expansion_test(root);
+  printf("[Info][main.c] Test pass and the updated grammar tree is below. \n");
+  set_template_output(0);
+  print_cmd_list(root);
   
   return 0;
 }

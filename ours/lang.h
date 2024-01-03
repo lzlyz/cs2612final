@@ -431,8 +431,8 @@ void vtable_set_visited(struct variable_table * vtable, struct var_type * vt, in
 /* Delete a item(pointer of var_type) of given vtable. */
 void vtable_del(struct variable_table * vtable, struct var_decl_expr * e);
 
-/* Find the item(pointer of var_type) of given vtable using given var_decl_expr. */
-struct vtable_item * vtable_find_vde(struct variable_table * vtable, struct var_decl_expr * e);
+/* Find the item(pointer of var_type) of given vtable using given var_type. */
+struct vtable_item * vtable_find_vt(struct variable_table * vtable, struct var_type * vt);
 
 
 /*---------------------------------------------------------------------------
@@ -483,6 +483,7 @@ void print_cmd(struct cmd * c);
 /* print given cmd_list. */
 void print_cmd_list(struct cmd_list * cl);
 
+void set_template_output(int output_template);
 
 /*---------------------------------------------------------------------------
                         Other function prototypes

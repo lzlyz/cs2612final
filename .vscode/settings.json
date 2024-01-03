@@ -60,6 +60,8 @@
     "*.v": "coq",
     "*.json5": "json5",
     "numbers": "c",
-    "random": "c"
+    "random": "c",
+    "compare": "c",
+    "type_traits": "c"
   }
 }
