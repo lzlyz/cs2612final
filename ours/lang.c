@@ -1835,7 +1835,7 @@ void print_cmd(const struct cmd * c) {
     indent --;
     break;
   case T_FUNCPROTODECL:
-    if(!do_output_template&&c->d.FUNCDECL.vt->vde->d.FUNC_TYPE.templatename!=NULL) break;
+    if(!do_output_template&&c->d.FUNCPROTODECL.vt->vde->d.FUNC_TYPE.templatename!=NULL) break;
     pprintf("Function Prototype Declare:\n");
     indent ++;
     print_vartype(c->d.FUNCPROTODECL.vt);
