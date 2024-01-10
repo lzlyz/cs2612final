@@ -1,0 +1,82 @@
+template <typename T> func T f(T c){
+    skip;
+};
+
+func int g()
+{
+ skip;
+};
+
+func int  gg1(int a );
+func int main(){
+    var int a;
+    var int a1;
+
+    a=1;
+    var int b;
+    b = (f<int >)(a);
+    var int c;
+    while (c<0) do{
+    c=2;
+    };
+    while(1) do 
+    {
+        a=1;
+
+    };
+    var int (*p)( int );
+    var int l;
+    p = &(f<int> );
+    var int a2;
+    do {a2=1;} while(l<1);
+    for (l=1;l<1;l=l+1)
+    {
+        l=1;
+    };
+
+    if (a==1) then
+    {a=1;}
+    else
+    {a=1;};
+    while(1) do 
+    {
+        a=1;
+        skip;
+        var int a3;
+        a3=2;
+        if (a==1) then
+        {
+            a=1;
+        }
+        else{
+            a=1;
+        };
+
+
+    };
+
+};
+
+
+func int*** fff()
+{
+    break;
+};
+
+func int ff()
+{
+    var int a;
+    a= f<int>(2);
+    var int * c;
+    var int ***b;
+    c= &a;
+    var int **d;
+    d=&c;
+    b=(&(&(&a)));
+    b=fff();
+    var int b4;
+};
+
+
+
+

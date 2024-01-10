@@ -2,8 +2,17 @@ template <typename T> func T f(T c){
     skip;
 };
 
+func int g()
+{
+ skip;
+};
+
+func int  gg1(int a );
 func int main(){
     var int a;
-    a=1;
-    a = (f<int *>)(a);
+    var int a1;
+
 };
+
+
+
