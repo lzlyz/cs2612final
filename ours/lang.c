@@ -515,6 +515,10 @@ struct cmd * TAsgn(struct expr * left, struct expr * right) {
     print_expr(right);
     printf(")");
     putchar('\n');
+    printf("left_type:\n");
+    print_vartype(left->vt);
+    printf("right_type:\n");
+    print_vartype(right->vt);
     exit(0);
   }
   return res;
