@@ -1,0 +1,10 @@
+template <typename T> func T ff(T c){
+    return c;
+};
+
+
+func int main(){
+    var int a;
+    a = 1;
+    var int f();
+};

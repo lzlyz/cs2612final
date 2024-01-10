@@ -1,0 +1,11 @@
+func int f(int c){
+    var int b;
+    b = c;
+    return b;
+};
+
+func int main(){
+    var int a;
+    a = 1;
+    a = (f<int>)(a);
+};

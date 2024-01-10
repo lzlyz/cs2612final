@@ -144,10 +144,12 @@ NT_GLOBAL_CMD:
   }
 | TM_FUNC NT_NAMED_HEAD
   {
+    function_type_test_in_decl($2);
     $$ = TFuncProtoDecl($2);
   }
 | NT_TEMPLATE_HEAD TM_FUNC NT_NAMED_HEAD
   {
+    function_type_test_in_decl($3);
     set_function_template_typename($3,$1);
     $$ = TFuncProtoDecl($3);
     set_template_typename("");
@@ -493,10 +495,9 @@ NT_TEMPLATE_FUNC_HEAD:
 NT_PROC_HEAD:
   TM_FUNC TM_VOID TM_IDENT TM_LEFT_PAREN NT_COMPLEX_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {
-    proc_decl_test($2);
     $$ = TVarType(T_TYPENAME_VOID, TFuncType(TIntType($3), $5));
+    proc_decl_test($$);
     vtable_add(get_global_vtable(), $$);
-
     init_new_now_vtable();
     vtable_add_list(get_now_vtable(),$5);
   }

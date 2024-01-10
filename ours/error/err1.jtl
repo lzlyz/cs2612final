@@ -1,0 +1,5 @@
+func int main(){
+    var int a;
+    var int *b;
+    b = *a;
+};

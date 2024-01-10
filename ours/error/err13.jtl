@@ -1,0 +1,14 @@
+template <typename T> func T ff(T c){
+    return c;
+};
+
+func int* f(int*,int);
+func void g(int);
+func int ffff;
+
+
+func int main(){
+    var int* a;
+    var int* b;
+    a = ff<int*>(b);
+};

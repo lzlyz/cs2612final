@@ -83,17 +83,13 @@
         return TM_TEMPLATE_TYPENAME;
     }
     yylval.s = new_str(yytext, yyleng);
-    struct vtable_item * res = vtable_find_char_now(get_now_vtable(),yytext);
+    struct vtable_item * res = vtable_find_char(get_now_vtable(),yytext);
     // printf("B%sB",yytext);
     // printf("C%sC\n",res->typename);
     
     /* Find the item(pointer of var_type) of given vtable using given name and only now_vtable. */
     if(res == NULL){
-        res = vtable_find_char(get_now_vtable()->father_vtable);
-        if(res == NULL){
-            return TM_IDENT;
-        }
-        return TM_IDENT_VAR_NAME;
+        return TM_IDENT;
     }
     else{
         return TM_VAR_NAME;

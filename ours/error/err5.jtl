@@ -1,0 +1,9 @@
+template <typename T> func T f(T c){
+    return c;
+};
+
+func int main(){
+    var int a;
+    a=1;
+    a = f(a);
+};

@@ -587,7 +587,7 @@ struct cmd * TReturn(struct expr * e) {
   res -> t = T_RETURN;
   res -> d.RETURN.e = e;
   if(do_type_check)
-  if(!(get_function_returntype()==NULL&&e==NULL)&&!vt_cmp(e->vt,get_function_returntype())){
+  if((e==NULL&&get_function_returntype()!=NULL)||(e!=NULL&&get_function_returntype()==NULL)||(e!=NULL&&!vt_cmp(e->vt,get_function_returntype()))){
     printf("[Error][Type check] Variable type unmatched in ");
     printf("Return(");
     print_expr(e);
@@ -784,7 +784,9 @@ int vde_cmp(const struct var_decl_expr * e1, const struct var_decl_expr * e2){
 
 /* Compare whether two var_type are the same. If same, return 1, else 0. */
 int vt_cmp(const struct var_type * vt1, const struct var_type * vt2){
-  return vt1==vt2||(vt1->left_type==vt2->left_type&&vde_cmp(vt1->vde,vt2->vde));
+  if(vt1==vt2) return 1;
+  if(vt1==NULL||vt2==NULL) return 0;
+  return (vt1->left_type==vt2->left_type&&vde_cmp(vt1->vde,vt2->vde));
 }
 
 /* Compare whether two var_type_list are the same. If same, return 1, else 0. */
