@@ -451,8 +451,8 @@ struct cmd * TDecl(struct var_type * vt) {
 /* Allocate a pointer of cmd of FUNCDECL with given parameters. */
 struct cmd * TFuncDecl(struct var_type * vt){
   struct cmd * res = new_cmd_ptr();
-  res -> t = T_FUNCPROTODECL;
-  res -> d.FUNCPROTODECL.vt = vt;
+  res -> t = T_FUNCDECL;
+  res -> d.FUNCDECL.vt = vt;
   return res;
 }
 
@@ -476,7 +476,7 @@ struct cmd * TFuncProtoDecl(struct var_type * vt){
   vtable_add(get_global_vtable(), vt); 
   struct cmd * res = new_cmd_ptr();
   res -> t = T_FUNCPROTODECL;
-  res -> d.FUNCDECL.vt = vt;
+  res -> d.FUNCPROTODECL.vt = vt;
   return res;
 }
 
@@ -492,7 +492,7 @@ struct cmd * TProcProtoDecl(struct var_type * vt){
   vtable_add(get_global_vtable(), vt); 
   struct cmd * res = new_cmd_ptr();
   res -> t = T_PROCPROTODECL;
-  res -> d.PROCDECL.vt = vt;
+  res -> d.PROCPROTODECL.vt = vt;
   return res;
 }
 
@@ -1832,6 +1832,19 @@ void print_cmd(const struct cmd * c) {
     pprintf("Process Declare:\n");
     indent ++;
     print_vartype(c->d.PROCDECL.vt);
+    indent --;
+    break;
+  case T_FUNCPROTODECL:
+    if(!do_output_template&&c->d.FUNCDECL.vt->vde->d.FUNC_TYPE.templatename!=NULL) break;
+    pprintf("Function Prototype Declare:\n");
+    indent ++;
+    print_vartype(c->d.FUNCPROTODECL.vt);
+    indent --;
+    break;
+  case T_PROCPROTODECL:
+    pprintf("Process Prototype Declare:\n");
+    indent ++;
+    print_vartype(c->d.PROCPROTODECL.vt);
     indent --;
     break;
   case T_ASGN:
