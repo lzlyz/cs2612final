@@ -1,0 +1,12 @@
+template <typename T> func T f(){
+    return g<T>();
+};
+
+template <typename G> func G g(){
+    return *(f<T*>());
+};
+
+func int main(){
+    var int a;
+    a=f<int>();
+};

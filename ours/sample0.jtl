@@ -1,9 +1,11 @@
-template < typename T > func T aaa(T b,int c){
-    aaa<T *>(&b,c);
+template < typename T > func T aaa(int b,int c){
+    var T * abs;
+    abs = aaa<T *>(&b,c);
+    return *abs;
 };
 
 func int main(){
     var int c;
-    c = aaa<int>(c,c)
-}
+    c = aaa<int>(c,c);
+};
 

@@ -1,0 +1,16 @@
+template <typename G> func G g(){
+    skip;
+};
+
+template <typename T> func T f(){
+    return g<T>();
+};
+
+func int main(){
+    var int a;
+    a=f<int>();
+    var int * b;
+    b=f<int *>();
+    var int (* c)(int,int);
+    c=f<int (*)(int,int)>();
+};

@@ -22,6 +22,17 @@
                         Grammar tree private functions
  ---------------------------------------------------------------------------*/
 
+/* Variable that controls type check. */
+int do_type_check=1;
+
+void open_type_check(){
+  do_type_check=1;
+}
+
+void close_type_check(){
+  do_type_check=0;
+}
+
 /* Allocate a new pointer of var_type. */
 struct var_type * new_var_type_ptr() {
   struct var_type * res =
@@ -229,7 +240,7 @@ struct expr * TConst(unsigned int value) {
   struct expr * res = new_expr_ptr();
   res -> t = T_CONST;
   res -> d.CONST.value = value;
-  res -> vt = TVarType("int",TIntType(""));
+  res -> vt = TVarType(T_TYPENAME_INT,TIntType(""));
   return res;
 }
 
@@ -249,6 +260,7 @@ struct expr * TBinOp(enum BinOpType op, struct expr * left, struct expr * right)
   res -> d.BINOP.op = op;
   res -> d.BINOP.left = left;
   res -> d.BINOP.right = right;
+  if(do_type_check)
   if(!vt_cmp(left->vt,right->vt)){
     printf("[Info][Type check] Variable type unmatch in ");
     print_binop(op);
@@ -260,6 +272,7 @@ struct expr * TBinOp(enum BinOpType op, struct expr * left, struct expr * right)
     putchar('\n');
     exit(0);
   }  
+  if(do_type_check)
   if(pointer_of_what(left->vt->vde)==T_FUNC_TYPE){
     printf("[Info][Type check] Variable type can not be (Pointer of)(*n) Function in");
     print_binop(op);
@@ -282,6 +295,7 @@ struct expr * TUnOp(enum UnOpType op, struct expr * arg) {
   res -> d.UNOP.op = op;
   res -> d.UNOP.arg = arg;
   res -> vt = arg -> vt;
+  if(do_type_check)
   if(pointer_of_what(arg->vt->vde)==T_FUNC_TYPE){
     printf("[Info][Type check] Variable type can not be (Pointer of)(*n) Function in");
     print_unop(op);
@@ -299,6 +313,7 @@ struct expr * TDeref(struct expr * arg) {
   struct expr * res = new_expr_ptr();
   res -> t = T_DEREF;
   res -> d.DEREF.arg = arg;
+  if(do_type_check)
   if(arg -> vt -> vde -> t != T_PTR_TYPE){
     printf("[Error][Type check] Variable type is not Pointer when Deref(");
     print_expr(arg);
@@ -322,6 +337,7 @@ struct expr * TAddrOf(struct expr * arg) {
 
 /* Allocate a pointer of expr of INSTANCE with given parameters. */
 struct expr * TInstance(struct expr * func, struct var_type * vt){
+  if(do_type_check)
   if(func -> vt -> vde -> t != T_FUNC_TYPE){
     printf("[Error][Type check] Variable type is not Function when Instance(");
     print_expr(func);
@@ -331,6 +347,7 @@ struct expr * TInstance(struct expr * func, struct var_type * vt){
     putchar('\n');
     exit(0);
   }
+  if(do_type_check)
   if(func -> vt -> vde->d.FUNC_TYPE.templatename== NULL){
     printf("[Error][Type check] Given function is not a template function when Induction(");
     print_expr(func);
@@ -356,6 +373,7 @@ struct expr * TFunc(struct expr * func, struct expr_list * args) {
   res -> t = T_FUNC;
   res -> d.FUNC.func = func;
   res -> d.FUNC.args = args;
+  if(do_type_check)
   if(func -> vt -> vde -> t != T_FUNC_TYPE || func->vt->left_type==T_TYPENAME_VOID){
     printf("[Error][Type check] Variable type is not Function when Function(");
     print_expr(func);
@@ -365,6 +383,7 @@ struct expr * TFunc(struct expr * func, struct expr_list * args) {
     putchar('\n');
     exit(0);
   }
+  if(do_type_check)
   if(func -> vt -> vde -> d.FUNC_TYPE.templatename != NULL){
     printf("[Error][Type check] You can not call a polymorphic function without instance in Function(");
     print_expr(func);
@@ -374,6 +393,7 @@ struct expr * TFunc(struct expr * func, struct expr_list * args) {
     putchar('\n');
     exit(0);
   }
+  if(do_type_check)
   if(!el_vtl_cmp(args,func->vt->vde->d.FUNC_TYPE.args)){
     printf("[Error][Type check] Arguments do not match in Function(");
     print_expr(func);
@@ -397,6 +417,7 @@ struct expr * TFunc(struct expr * func, struct expr_list * args) {
 struct cmd * TDecl(struct var_type * vt) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_DECL;
+  if(do_type_check)
   if(vt->vde->t==T_FUNC_TYPE){
     printf("[Error][Type check] in Variable or Pointer Declaration, not declare a Pointer or Variable.");
     exit(0);
@@ -427,6 +448,7 @@ struct cmd * TAsgn(struct expr * left, struct expr * right) {
   res -> t = T_ASGN;
   res -> d.ASGN.left = left;
   res -> d.ASGN.right = right;
+  if(do_type_check)
   if(!vt_cmp(left->vt,right->vt)){
     printf("[Error][Type check] Variable type unmatched in ");
     printf("Assignment(");
@@ -498,6 +520,7 @@ struct cmd * TReturn(struct expr * e) {
   struct cmd * res = new_cmd_ptr();
   res -> t = T_RETURN;
   res -> d.RETURN.e = e;
+  if(do_type_check)
   if(!(get_function_returntype()==NULL&&e==NULL)&&!vt_cmp(e->vt,get_function_returntype())){
     printf("[Error][Type check] Variable type unmatched in ");
     printf("Return(");
@@ -522,8 +545,9 @@ struct cmd * TProc(struct expr * func, struct expr_list * args) {
   res -> t = T_PROC;
   res -> d.PROC.proc = func;
   res -> d.PROC.args = args;
+  if(do_type_check)
   if(func -> vt -> vde -> t != T_FUNC_TYPE || func -> vt -> left_type!=T_TYPENAME_VOID){
-    printf("[Error][Type check] Variable type is not Function when Function(");
+    printf("[Error][Type check] Variable type is not Process when Process(");
     print_expr(func);
     printf(",");
     print_expr_list_as_argument_types(args);
@@ -531,6 +555,7 @@ struct cmd * TProc(struct expr * func, struct expr_list * args) {
     putchar('\n');
     exit(0);
   }
+  if(do_type_check)
   if(!el_vtl_cmp(args,func->vt->vde->d.FUNC_TYPE.args)){
     printf("[Error][Type check] Arguments not match in Process(");
     print_expr(func);
@@ -553,8 +578,9 @@ struct var_type * TVarType(enum TypenameType left_type, struct var_decl_expr * v
 
 /* Assume given vt is funtion_type. Allocate a pointer of var_type with the return type of given vt. */
 struct var_type * TFuncReturnType(struct var_type * vt){
+  if(do_type_check)
   if(vt->vde->t!=T_FUNC_TYPE){
-    yyerror("[Error][Type check] in TFuncReturnType, given var_type is not a function type. Mostly this error is caused by you are declaring a function but given var_decl_expr is not a function.");
+    printf("[Error][Type check] in TFuncReturnType, given var_type is not a function type. Mostly this error is caused by you are declaring a function but given var_decl_expr is not a function.");
     exit(0);
   }
   return TVarType(vt -> left_type, vt -> vde -> d.FUNC_TYPE.ret);
@@ -597,7 +623,7 @@ struct variable_table * now_vtable;
  ---------------------------------------------------------------------------*/
 
 /* Get the type of a vde except PTR. */
-int pointer_of_what(struct var_decl_expr * vde){
+int pointer_of_what(const struct var_decl_expr * vde){
   switch(vde->t){
     case T_PTR_TYPE:
       return pointer_of_what(vde->d.PTR_TYPE.base);
@@ -607,7 +633,7 @@ int pointer_of_what(struct var_decl_expr * vde){
 }
 
 /* Compare whether two var_decl_expr are the same. If same, return 1, else 0. */
-int vde_cmp(struct var_decl_expr * e1,struct var_decl_expr * e2){
+int vde_cmp(const struct var_decl_expr * e1, const struct var_decl_expr * e2){
   if(e1==e2) return 1;
   if(e1->t!=e2->t) return 0;
   switch(e1->t){
@@ -621,26 +647,26 @@ int vde_cmp(struct var_decl_expr * e1,struct var_decl_expr * e2){
 }
 
 /* Compare whether two var_type are the same. If same, return 1, else 0. */
-int vt_cmp(struct var_type * vt1, struct var_type * vt2){
+int vt_cmp(const struct var_type * vt1, const struct var_type * vt2){
   return vt1==vt2||(vt1->left_type==vt2->left_type&&vde_cmp(vt1->vde,vt2->vde));
 }
 
 /* Compare whether two var_type_list are the same. If same, return 1, else 0. */
-int vtl_cmp(struct var_type_list * vtl1, struct var_type_list * vtl2){
+int vtl_cmp(const struct var_type_list * vtl1, const struct var_type_list * vtl2){
   if(vtl1==vtl2) return 1;
   if(vtl1==NULL||vtl2==NULL) return 0;
   return vt_cmp(vtl1->vt,vtl2->vt)&&vtl_cmp(vtl1->next,vtl2->next);
 }
 
 /* Compare whether two expr_list are the same. If same, return 1, else 0. */
-int el_vtl_cmp(struct expr_list * el, struct var_type_list * vtl){
+int el_vtl_cmp(const struct expr_list * el, const struct var_type_list * vtl){
   if(el==NULL&&vtl==NULL) return 1;
   if(el==NULL||vtl==NULL) return 0;
   return vt_cmp(el->e->vt,vtl->vt)&&el_vtl_cmp(el->next,vtl->next);
 }
 
 /* Extract the name of var_decl_expr. */
-char * get_vde_name(struct var_decl_expr * e){
+char * get_vde_name(const struct var_decl_expr * e){
   switch (e -> t) {
   case T_INT_TYPE:
     return e -> d.INT_TYPE.name;
@@ -653,7 +679,7 @@ char * get_vde_name(struct var_decl_expr * e){
 
 /* Return the first var_type_list of a var_decl_expr. 
    Mostly this is used for extract the type of arguments of a (pointer of) function for type checking. */
-struct var_type_list * get_vde_vtl(struct var_decl_expr * e){
+struct var_type_list * get_vde_vtl(const struct var_decl_expr * e){
   switch (e -> t) {
   case T_INT_TYPE:
     return NULL;
@@ -730,30 +756,34 @@ void vtable_add_list(struct variable_table * vtable, struct var_type_list * vtl)
 
 /* Find the correct item (require function type) in given variable table (mostly global variable table) and modify its cmd body. 
    This is mainly used to update functions in global variable table. */
-void vtable_add_cmd(struct variable_table * vtable, struct var_type * vt, struct cmd * c){
+void vtable_add_cmd_list(struct variable_table * vtable, struct var_type * vt, struct cmd_list * cl){
   struct vtable_item * res = vtable_find_vt(vtable, vt);
+  if(do_type_check)
   if(res==NULL){
     printf("[Error][Type check] not find the item to add cmd, vartype:");
     print_vartype(vt);
     exit(0);
   }
+  if(do_type_check)
   if(res->vt->vde->t!=T_FUNC_TYPE){
     printf("[Error][Type check] the item to add cmd is not the function type, vartype:");
     print_vartype(vt);
     exit(0);
   }
-  res->vt->vde->d.FUNC_TYPE.body=c;
+  res->vt->vde->d.FUNC_TYPE.body=cl;
 }
 
 /* Find the correct item (require function type) in given variable table (mostly global variable table) and modify its templatename. 
    This is mainly used to update polymorphic functions in global variable table. */
 void vtable_add_template(struct variable_table * vtable, struct var_type * vt, char * templatename){
   struct vtable_item * res = vtable_find_vt(vtable, vt);
+  if(do_type_check)
   if(res==NULL){
     printf("[Error][Type check] not find the item to add cmd, vartype:");
     print_vartype(vt);
     exit(0);
   }
+  if(do_type_check)
   if(res->vt->vde->t!=T_FUNC_TYPE){
     printf("[Error][Type check] the item to add cmd is not the function type, vartype:");
     print_vartype(vt);
@@ -774,7 +804,7 @@ void vtable_del(struct variable_table * vtable, struct var_decl_expr * e){
 }
 
 /* Find the item(pointer of var_type) of given vtable using given var_type. */
-struct vtable_item * vtable_find_vt(struct variable_table * vtable, struct var_type * vt){
+struct vtable_item * vtable_find_vt(struct variable_table * vtable,struct var_type * vt){
   return vtable_find_char(vtable,get_vde_name(vt->vde));
 }
 
@@ -846,6 +876,10 @@ struct instance_function_list * TInsFunList(struct instance_function * insf, str
   return res;
 } 
 
+void ped_init(){
+  polymorphic_expansion_dict=dictionary_new(30);
+}
+
 
 void ped_add(char * polymorphic_name, struct var_type * instance_vt, struct var_type * expanded_function){
   dictionary_set(polymorphic_expansion_dict, polymorphic_name, 
@@ -869,7 +903,7 @@ struct var_type * ped_find(char * polymorphic_name, struct var_type * instance_v
    To delete them is a little complex. I think I'd rather to choose not to output them. 
    (2 ways to delete the polymorphic functions: 1. add previous to cmd_list, 
     2. use cl->next instead of cl and you need to modify root.) */
-void ped_unfold_function_declare(const struct cmd_list * root){
+void ped_unfold_function_declare(struct cmd_list * root){
   struct cmd_list * cl;
   for(cl=root;cl!=NULL;cl=cl->next){
     if(cl->c->t==T_FUNCDECL&&cl->c->d.FUNCDECL.vt->vde->d.FUNC_TYPE.templatename!=NULL){
@@ -936,13 +970,13 @@ struct visited_list * TVisitedList(struct var_type * function, enum template_typ
   return res;
 }
 
-void visl_add(struct visited_list * visl, const struct var_type * function, enum template_typename_type instance_type){
-  struct visited_list * visl0;
-  for(visl0=visl;visl0->next!=NULL;visl0=visl0->next);
+void visl_add(struct visited_list * visl, struct var_type * function, enum template_typename_type instance_type){
+  struct visited_list * visl0=visl;
+  while(visl0->next!=NULL) visl0=visl0->next;
   visl0->next=TVisitedList(function,instance_type,NULL);
 }
 
-struct visited_list * visl_new(const struct var_type * function, enum template_typename_type instance_type){
+struct visited_list * visl_new(struct var_type * function, enum template_typename_type instance_type){
   return TVisitedList(function,instance_type,NULL);
 }
 
@@ -953,12 +987,9 @@ void visl_delete(struct visited_list * visl){
   }
 }
 
-int visl_exist(struct visited_list * visl, struct var_type * function, enum template_typename_type instance_type){
-  struct visited_list * visl0;
-  for(visl0=visl;visl0!=NULL;visl0=visl0->next){
-    if(vt_cmp(function,visl0->function)&&instance_type==visl0->instance_type) return 1;
-  }
-  return 0;
+int visl_exist(const struct visited_list * visl, const struct var_type * function, enum template_typename_type instance_type){
+  if(visl==NULL) return 0;
+  else return (vt_cmp(function,visl->function)&&instance_type==visl->instance_type)||visl_exist(visl->next,function,instance_type);
 }
 
 /*---------------------------------------------------------------------------
@@ -990,11 +1021,8 @@ int visl_exist(struct visited_list * visl, struct var_type * function, enum temp
 int vt_exists_template_typename(const struct var_type * vt);
 
 int vtl_exists_template_typename(const struct var_type_list * vtl){
-  struct var_type_list * vtl0 = vtl;
-  for(vtl0=vtl;vtl0!=NULL;vtl0=vtl0->next){
-    if(vt_exists_template_typename(vtl0->vt)) return 1;
-  }
-  return 0;
+  if(vtl==NULL) return 0;
+  else return vt_exists_template_typename(vtl->vt)||vtl_exists_template_typename(vtl->next);
 }
 
 int vde_exists_template_typename(const struct var_decl_expr * vde){
@@ -1018,23 +1046,29 @@ int vt_is_original_template_typename(const struct var_type * vt){
   return vt->left_type==T_TYPENAME_TEMPLATE&&vt->vde->t==T_INT_TYPE;
 }
 
+void PT_cmd_list(struct visited_list * visl, enum template_typename_type instance_type, struct cmd_list * cl);
+void PT_expr_list(struct visited_list * visl, enum template_typename_type instance_type, struct expr_list * el);
+
+void FT_polymorphic_test(struct var_type * polymorphic_function);
+
 void PT_next_call(struct visited_list * visl, enum template_typename_type last_type, struct var_type * polymorphic_function, struct var_type * next_type){
   // if next call does not carry a tempalte typename, it's useless to take it to go.
   if(!vt_exists_template_typename(next_type)) return;
+  // printf("wsnd");
 
   // Decide the next instance type.
   enum template_typename_type next_template_type;
-  if(last_type==T_ORIGINAL_TEMPLATE_TYPENAME&&vt_is_original_template_typaname(next_type)){
+  if(last_type==T_ORIGINAL_TEMPLATE_TYPENAME&&vt_is_original_template_typename(next_type)){
     next_template_type = T_ORIGINAL_TEMPLATE_TYPENAME;
   }
   else {
     next_template_type = T_MODIFIED_TEMPLATE_TYPENAME;
   }
-  
   if(vt_cmp(visl->function,polymorphic_function)){
     if(next_template_type==T_MODIFIED_TEMPLATE_TYPENAME){
-      printf("[Error][Polymorphic Expansion] A polymorphic function can not be expaned to limited copies, the function:");
+      printf("[Error][Polymorphic Expansion] A polymorphic function can not be expaned to limited copies, the function:\n");
       print_vartype(polymorphic_function);
+      exit(0);
     }
   }
   else{
@@ -1045,7 +1079,7 @@ void PT_next_call(struct visited_list * visl, enum template_typename_type last_t
     }
 
     // Then next call should consider whether this function is in visited_list.
-    if(visl_exist(visl,polymorphic_function,next_type)) return;
+    if(visl_exist(visl,polymorphic_function,next_template_type)) return;
 
     // Go to next function !
     visl_add(visl,polymorphic_function,next_template_type);
@@ -1054,22 +1088,32 @@ void PT_next_call(struct visited_list * visl, enum template_typename_type last_t
 }
 
 void PT_expr(struct visited_list * visl, enum template_typename_type instance_type, struct expr * e){
+  // print_expr(e);puts("");
   switch(e->t){  
     case T_BINOP:
       PT_expr(visl, instance_type, e->d.BINOP.left);
       PT_expr(visl, instance_type, e->d.BINOP.right);
+      break;
     case T_UNOP:
       PT_expr(visl, instance_type, e->d.UNOP.arg);
+      break;
     case T_DEREF:
       PT_expr(visl, instance_type, e->d.DEREF.arg);
+      break;
     case T_ADDROF:
       PT_expr(visl, instance_type, e->d.ADDROF.arg);
+      break;
     case T_INSTANCE:
-      PT_next_call(visl, instance_type, e->d.INSTANCE.func, e->d.INSTANCE.vt);
+      PT_next_call(visl, instance_type, e->d.INSTANCE.func->vt, e->d.INSTANCE.vt);
+      break;
     case T_FUNC:
       PT_expr(visl, instance_type, e->d.FUNC.func);
       PT_expr_list(visl, instance_type, e->d.FUNC.args);
+      break;
+    default:
+      break;
   }
+  // puts("test9981");
 }
 
 void PT_expr_list(struct visited_list * visl, enum template_typename_type instance_type, struct expr_list * el){
@@ -1079,10 +1123,11 @@ void PT_expr_list(struct visited_list * visl, enum template_typename_type instan
 }
 
 void PT_cmd(struct visited_list * visl, enum template_typename_type instance_type, struct cmd * c){
+  // print_cmd(c);putchar('\n');
   switch(c->t){
     case T_ASGN:
       PT_expr(visl, instance_type, c->d.ASGN.left);
-      PT_expr(visl, instance_type, c->d.ASGN.left);
+      PT_expr(visl, instance_type, c->d.ASGN.right);
       break;
     case T_IF:
       PT_expr(visl, instance_type, c->d.IF.cond);
@@ -1115,11 +1160,12 @@ void PT_cmd(struct visited_list * visl, enum template_typename_type instance_typ
 void PT_cmd_list(struct visited_list * visl, enum template_typename_type instance_type, struct cmd_list * cl){
   if(cl==NULL) return;
   PT_cmd(visl,instance_type,cl->c);
+  // print_cmd_list(cl);
   PT_cmd_list(visl,instance_type,cl->next);
 }
 
 /*---------------------------------------------------------------------------
-Polymorphic expansion private functions 4: Polymorphic function expanding(FT)
+Polymorphic expansion private functions 4: Polymorphic function expanding(PFE)
  ---------------------------------------------------------------------------*/
 
 const int POLYMORPHIC_MAX_COPIES=9999, POLYMORPHIC_MAX_COPIES_STELEN=4; //POLYMORPHIC_MAX_COPIES_STELEN=log10(POLYMORPHIC_MAX_COPIES)+1;
@@ -1143,9 +1189,11 @@ char * alloc_new_function_name(const char * polymorphic_function_name){
 
 struct var_type * PFE(struct var_type * polymorphic_function, struct var_type * instance_type);
 
-struct expr_list * PFE_expr_list(const struct var_type * instance_type, const struct expr_list * el);
+struct expr_list * PFE_expr_list(struct var_type * instance_type, struct expr_list * el);
 
-struct expr * PFE_expr(const struct var_type * instance_type, const struct expr * e){
+struct cmd_list * PFE_cmd_list(struct var_type * instance_type, struct cmd_list * cl);
+
+struct expr * PFE_expr(struct var_type * instance_type, struct expr * e){
   switch(e->t){  
     case T_BINOP:
       return TBinOp( e->d.BINOP.op,PFE_expr(instance_type, e->d.BINOP.left),PFE_expr(instance_type, e->d.BINOP.right));
@@ -1156,7 +1204,7 @@ struct expr * PFE_expr(const struct var_type * instance_type, const struct expr 
     case T_ADDROF:
       return TAddrOf(PFE_expr(instance_type, e->d.ADDROF.arg));
     case T_INSTANCE:
-      return TVar(PFE(e->d.INSTANCE.func,template_expand_vt(instance_type, e->d.INSTANCE.vt))->vde->d.FUNC_TYPE.name);
+      return TVar(PFE(e->d.INSTANCE.func->vt,template_expand_vt(instance_type, e->d.INSTANCE.vt))->vde->d.FUNC_TYPE.name);
     case T_FUNC:
       return TFunc(PFE_expr(instance_type, e->d.FUNC.func),PFE_expr_list(instance_type, e->d.FUNC.args));
     default:
@@ -1164,17 +1212,17 @@ struct expr * PFE_expr(const struct var_type * instance_type, const struct expr 
   }
 }
 
-struct expr_list * PFE_expr_list(const struct var_type * instance_type, const struct expr_list * el){
+struct expr_list * PFE_expr_list(struct var_type * instance_type, struct expr_list * el){
   if(el==NULL) return TELNil();
   else return TELCons(PFE_expr(instance_type, el->e),PFE_expr_list(instance_type, el->next));
 }
 
-struct cmd * PFE_cmd(const struct var_type * instance_type, struct cmd * c){
+struct cmd * PFE_cmd(struct var_type * instance_type, struct cmd * c){
   switch(c->t){
     case T_DECL:
       return TDecl(template_expand_vt(instance_type, c->d.DECL.vt));
     case T_ASGN:
-      return TAsgn(PFE_expr(instance_type, c->d.ASGN.left),PFE_expr(instance_type, c->d.ASGN.left));
+      return TAsgn(PFE_expr(instance_type, c->d.ASGN.left),PFE_expr(instance_type, c->d.ASGN.right));
     case T_IF:
       return TIf(PFE_expr(instance_type, c->d.IF.cond),PFE_cmd_list(instance_type, c->d.IF.left),PFE_cmd_list(instance_type, c->d.IF.right));
     case T_DOWHILE:
@@ -1183,7 +1231,7 @@ struct cmd * PFE_cmd(const struct var_type * instance_type, struct cmd * c){
       return TWhileDo(PFE_expr(instance_type, c->d.WHILEDO.cond),PFE_cmd_list(instance_type, c->d.WHILEDO.body));
     case T_FOR:
       return TFor(PFE_cmd(instance_type, c->d.FOR.init),PFE_expr(instance_type, c->d.FOR.cond),
-          PFE_cmd_list(instance_type, c->d.FOR.body),PFE_cmd(instance_type, c->d.FOR.nxt));
+          PFE_cmd(instance_type, c->d.FOR.nxt),PFE_cmd_list(instance_type, c->d.FOR.body));
     case T_RETURN:
       return TReturn(PFE_expr(instance_type, c->d.RETURN.e));
     case T_PROC:
@@ -1193,29 +1241,28 @@ struct cmd * PFE_cmd(const struct var_type * instance_type, struct cmd * c){
   }
 }
 
-struct cmd_list * PFE_cmd_list(const struct var_type * instance_type, const struct cmd_list * cl){
+struct cmd_list * PFE_cmd_list(struct var_type * instance_type, struct cmd_list * cl){
   if(cl==NULL) return TCLNil();
   else return TCLCons(PFE_cmd(instance_type, cl->c),PFE_cmd_list(instance_type, cl->next));
 }
 
 struct var_type * PFE(struct var_type * polymorphic_function, struct var_type * instance_type){
+  // puts("test");
   struct var_type * instanced_function = ped_find(polymorphic_function->vde->d.FUNC_TYPE.name,instance_type);
   if(instanced_function!=NULL){
+    
+  // puts("test97");
     return instanced_function;
   }
+  FT_polymorphic_test(polymorphic_function);
   struct var_type * new_function = template_expand_vt(instance_type, polymorphic_function);
   new_function->vde->d.FUNC_TYPE.name=alloc_new_function_name(new_function->vde->d.FUNC_TYPE.name);
-  warning// here should add some code to avoid such situatioon
-  /*
-  T f(){
-    g<int>;
-  }
-  T g(){
-    f<int>;
-  }
-  */
-  new_function->vde->d.FUNC_TYPE.body=PFE_cmd_list(instance_type, new_function->vde->d.FUNC_TYPE.body);
+  // printf("test98 %s\n",new_function->vde->d.FUNC_TYPE.name);
+  vtable_add(get_global_vtable(),new_function);
   ped_add(polymorphic_function->vde->d.FUNC_TYPE.name,instance_type,new_function);
+  new_function->vde->d.FUNC_TYPE.body=PFE_cmd_list(instance_type, new_function->vde->d.FUNC_TYPE.body);
+  // puts("test99");
+  
   return new_function;
 }
 
@@ -1236,18 +1283,22 @@ void FT_polymorphic_test(struct var_type * polymorphic_function){
 
 /* change given instance expr. */
 void FT_expr_expand(struct expr * e){
-  struct var_type * instance_function = PFE(e->d.INSTANCE.func, e->d.INSTANCE.vt);
+  struct var_type * instance_function = PFE(e->d.INSTANCE.func->vt, e->d.INSTANCE.vt);
   e->t = T_VAR;
   e->d.VAR.name = instance_function->vde->d.FUNC_TYPE.name;
   e->vt = instance_function;
 }
+
+void FT_cmd_list(struct cmd_list * cl);
 
 void FT_expr_list(struct expr_list * el);
 
 void FT_visit_function(struct var_type * func);
 
 /* return 1 if instance exists. */
-int FT_expr(const struct expr * e){
+int FT_expr(struct expr * e){
+  // printf("Traversing expr");
+  // print_expr(e);
   switch(e->t){  
     case T_BINOP:
       FT_expr(e->d.BINOP.left);
@@ -1268,8 +1319,9 @@ int FT_expr(const struct expr * e){
         FT_visit_function(e->vt);
       FT_expr_list(e->d.FUNC.args);
       return 0;
+    default:
+      return 0;
   }
-  return 0;
 }
 
 // 多态函数实例化的时候就会创建模板，因此对于多态函数有两种处理需求：1.实际参与调用了多态函数，2，仅仅对多态函数进行了实例化。
@@ -1283,10 +1335,12 @@ void FT_expr_list(struct expr_list * el){
 }
 
 void FT_cmd(struct cmd * c){
+  // printf("Traversing cmd");
+  // print_cmd(c);
   switch(c->t){
     case T_ASGN:
       FT_expr(c->d.ASGN.left);
-      FT_expr(c->d.ASGN.left);
+      FT_expr(c->d.ASGN.right);
       break;
     case T_IF:
       FT_expr(c->d.IF.cond);
@@ -1311,7 +1365,7 @@ void FT_cmd(struct cmd * c){
       FT_expr(c->d.RETURN.e);
       break;
     case T_PROC:
-      FT_next_call(c->d.PROC.proc);
+      FT_visit_function(c->d.PROC.proc->vt);
       FT_expr_list(c->d.PROC.args);
       break;
   }
@@ -1320,6 +1374,8 @@ void FT_cmd(struct cmd * c){
 void FT_cmd_list(struct cmd_list * cl){
   if(cl==NULL) return;
   FT_cmd(cl->c);
+  // printf("Traversing cmdlist");
+  // print_cmd(cl->c);
   FT_cmd_list(cl->next);
 }
 
@@ -1333,7 +1389,7 @@ void FT_visit_function(struct var_type * func){
 \*--------------------------------------------------------------------------*/
 
 /* If ifexpand==true, expand var_decl_expr without command body. This is mainly used in type check. */
-struct var_decl_expr * template_expand_vde(struct var_type * expand, struct var_decl_expr* vde,int ifexpand){
+struct var_decl_expr * template_expand_vde(struct var_type * expand, struct var_decl_expr* vde, int ifexpand){
   struct var_decl_expr * res = new_var_decl_expr_ptr();
   switch(vde->t){
   case T_INT_TYPE:
@@ -1380,22 +1436,26 @@ struct var_type_list * template_expand_vtl(struct var_type * expand, struct var_
 
 
 /* Test the whether the polymorphic function can be expanded as limited copies. */
-int polymorphic_expansion_test(const struct cmd_list * root){
-  struct var_type * main_vt=vtable_find_char(get_global_vtable(),"main")->vt;
-  if(main_vt==NULL){
-    printf("[Warning][Polymorphic expansion test] No \"main\" Function!");
+int polymorphic_expansion_test(struct cmd_list * root){
+  struct vtable_item * main_vtable_item=vtable_find_char(get_global_vtable(),"main");
+  if(main_vtable_item==NULL){
+    printf("[Warning][Polymorphic expansion test] No \"main\" Function!\n");
     return 1;
   }
-  if(main_vt->vde->t!=T_FUNC_TYPE){
-    printf("[Warning][Polymorphic expansion test] \"main\" is not a function!");
+  if(main_vtable_item->vt->vde->t!=T_FUNC_TYPE){
+    printf("[Warning][Polymorphic expansion test] \"main\" is not a function!\n");
     return 1;
   }
-  if(main_vt->vde->d.FUNC_TYPE.templatename!=NULL){
-    printf("[Warning][Polymorphic expansion test] \"main\" should not be a polymorphic function!");
+  if(main_vtable_item->vt->vde->d.FUNC_TYPE.templatename!=NULL){
+    printf("[Warning][Polymorphic expansion test] \"main\" should not be a polymorphic function!\n");
     return 1;
   }
+  // Close type check
+  close_type_check();
+  // initialize PED
+  ped_init();
   // initialize polumorphic expansion test stack.
-  FT_visit_function(main_vt);
+  FT_visit_function(main_vtable_item->vt);
   ped_unfold_function_declare(root);
   return 0;
 }
@@ -1417,7 +1477,7 @@ void print_spaces() {
 }
 
 /* print spaces and print given string. */
-void pprintf(char * s) {
+void pprintf(const char * s) {
   print_spaces();
   printf("%s",s);
 }
@@ -1427,7 +1487,7 @@ void pprintf(char * s) {
  ---------------------------------------------------------------------------*/
 
 /* print given var_type_list as arguments of functions. */
-void print_var_type_list_as_argument_types(struct var_type_list * args) {
+void print_var_type_list_as_argument_types(const struct var_type_list * args) {
   if (args == NULL) {
     return;
   }
@@ -1440,7 +1500,7 @@ void print_var_type_list_as_argument_types(struct var_type_list * args) {
 }
 
 /* print given expr_list as arguments of calling functions. */
-void print_expr_list_as_argument_types(struct expr_list * args) {
+void print_expr_list_as_argument_types(const struct expr_list * args) {
   if (args == NULL) {
     return;
   }
@@ -1454,7 +1514,7 @@ void print_expr_list_as_argument_types(struct expr_list * args) {
 }
 
 /* print given var_decl_expr. */
-char * print_vde(struct var_decl_expr * e) {
+char * print_vde(const struct var_decl_expr * e) {
   switch (e -> t) {
   case T_INT_TYPE:
     printf("the LHS type\n");
@@ -1481,7 +1541,7 @@ char * print_vde(struct var_decl_expr * e) {
       print_spaces();
       printf("Function Body: \n");
       indent ++;
-      print_cmd(e->d.FUNC_TYPE.body);
+      print_cmd_list(e->d.FUNC_TYPE.body);
       indent --;
     }
     indent --;
@@ -1490,7 +1550,7 @@ char * print_vde(struct var_decl_expr * e) {
 }
 
 /* print given var_type. */
-void print_vartype(struct var_type * vt){
+void print_vartype(const struct var_type * vt){
   print_spaces();
   printf("Left type: ");
   switch(vt->left_type){
@@ -1568,7 +1628,7 @@ void print_unop(enum UnOpType op) {
 }
 
 /* print given expr. */
-void print_expr(struct expr * e) {
+void print_expr(const struct expr * e) {
   switch (e -> t) {
   case T_CONST:
     printf("CONST(%d)", e -> d.CONST.value);
@@ -1629,7 +1689,7 @@ void print_expr(struct expr * e) {
 int do_output_template=1;
 
 /* print given cmd. */
-void print_cmd(struct cmd * c) {
+void print_cmd(const struct cmd * c) {
   switch (c -> t) {
   case T_DECL:
     pprintf("Variable Declare:\n");
@@ -1668,9 +1728,9 @@ void print_cmd(struct cmd * c) {
     print_expr(c -> d.IF.cond);
     putchar('\n');
     pprintf("Then:\n");
-    print_cmd(c -> d.IF.left);
+    print_cmd_list(c -> d.IF.left);
     pprintf("Else:\n");
-    print_cmd(c -> d.IF.right);
+    print_cmd_list(c -> d.IF.right);
     indent --;
     break;
   case T_WHILEDO:
@@ -1680,7 +1740,7 @@ void print_cmd(struct cmd * c) {
     print_expr(c -> d.WHILEDO.cond);
     putchar('\n');
     pprintf("Body:");
-    print_cmd(c -> d.WHILEDO.body);
+    print_cmd_list(c -> d.WHILEDO.body);
     putchar('\n');
     indent --;
     break;
@@ -1688,7 +1748,7 @@ void print_cmd(struct cmd * c) {
     pprintf("DoWhile:\n");
     indent ++;
     pprintf("Body:\n");
-    print_cmd(c -> d.DOWHILE.body);
+    print_cmd_list(c -> d.DOWHILE.body);
     pprintf("Condition:");
     print_expr(c -> d.DOWHILE.cond);
     putchar('\n');
@@ -1705,7 +1765,7 @@ void print_cmd(struct cmd * c) {
     pprintf("NextStep:\n");
     print_cmd(c -> d.FOR.nxt);
     pprintf("Body:\n");
-    print_cmd(c -> d.FOR.body);
+    print_cmd_list(c -> d.FOR.body);
     putchar('\n');
     indent --;
     break;
@@ -1744,7 +1804,7 @@ void print_cmd(struct cmd * c) {
 }
 
 /* print given cmd_list. */
-void print_cmd_list(struct cmd_list * cl){
+void print_cmd_list(const struct cmd_list * cl){
   if(cl==NULL){
     return;
   }
@@ -1762,7 +1822,7 @@ void set_template_output(int output_template){
  ---------------------------------------------------------------------------*/
 
 /* build nature number. */
-unsigned int build_nat(char * c, int len) {
+unsigned int build_nat(const char * c, int len) {
   int s = 0, i = 0;
   for (i = 0; i < len; ++i) {
     if (s > 429496729) {
@@ -1779,7 +1839,7 @@ unsigned int build_nat(char * c, int len) {
 }
 
 /* allocate a new string. */
-char * new_str(char * str, int len) {
+char * new_str(const char * str, int len) {
   char * res = (char *) malloc(sizeof(char) * (len + 1));
   if (res == NULL) {
     printf("Failure in malloc.\n");

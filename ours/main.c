@@ -24,16 +24,31 @@ int main(int argc, char * * argv) {
   // Firstly initialize variable table!
   init_global_vtable();
   // Do yyparse!
-  yyparse();
-  fclose(yyin);
-  // Print grammar tree.
-  print_cmd_list(root);
-  printf("[Info][main.c] Then we'll test if the polymorphic function can be expanded as limited copies. \n");
-  // Polymorphic expansion test.
-  polymorphic_expansion_test(root);
-  printf("[Info][main.c] Test pass and the updated grammar tree is below. \n");
-  set_template_output(0);
-  print_cmd_list(root);
+  int yyparse_result = yyparse();
+  switch(yyparse_result){
+    case 0:
+      fclose(yyin);
+      // Print grammar tree.
+      printf("[Info][main.c] Lexical and Grammar Analysis pass, here is the grammar tree with polymorphic. \n");
+      print_cmd_list(root);
+      printf("[Info][main.c] Then we'll test if the polymorphic function can be expanded as limited copies. \n");
+      // Polymorphic expansion test.
+      polymorphic_expansion_test(root);
+      printf("[Info][main.c] Polymorphic expansion passes and the grammar tree without polymorphic is below. \n");
+      set_template_output(0);
+      print_cmd_list(root);
+      printf("[Info][main.c] Program exits normally. \n");
+      break;
+    case 1:
+      printf("[Error][Lexical and Grammar Analysis] Syntax Error.\n");
+      break;
+    case 2:
+      printf("[Error][Lexical and Grammar Analysis] Out of memory.\n");
+      break;
+    default:
+      break;
+  }
+  
   
   return 0;
 }

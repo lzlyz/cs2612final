@@ -63,6 +63,8 @@ enum CmdType {
   T_DECL = 0,
   T_FUNCDECL,
   T_PROCDECL,
+  T_FUNCPROTODECL,
+  T_PROCPROTODECL,
   T_ASGN,
   T_IF,
   T_DOWHILE,
@@ -121,7 +123,7 @@ struct var_decl_expr {
   union {
     struct { char * name; } INT_TYPE;
     struct { struct var_decl_expr * base; } PTR_TYPE;
-    struct { char * templatename; char * name; struct var_decl_expr * ret; struct var_type_list * args; struct cmd * body; } FUNC_TYPE;
+    struct { char * templatename; char * name; struct var_decl_expr * ret; struct var_type_list * args; struct cmd_list * body; } FUNC_TYPE;
   } d;
 };
 
@@ -226,7 +228,7 @@ struct cmd {
  */
 struct cmd_list{
   struct cmd * c;
-  struct cmd_lsit * next;
+  struct cmd_list * next;
 };
 
 /**
@@ -318,6 +320,12 @@ struct cmd * TFuncDecl(struct var_type * vt);
 /* Allocate a pointer of cmd of PROCDECL with given parameters. */
 struct cmd * TProcDecl(struct var_type * vt);
 
+/* Allocate a pointer of cmd of FUNCPROTODECL with given parameters. */
+struct cmd * TFuncProtoDecl(struct var_type * vt);
+
+/* Allocate a pointer of cmd of PROPROTOCDECL with given parameters. */
+struct cmd * TProcProtoDecl(struct var_type * vt);
+
 /* Allocate a pointer of cmd of ASGN with given parameters. */
 struct cmd * TAsgn(struct expr * left, struct expr * right);
 
@@ -362,26 +370,26 @@ struct variable_table * TNewVtable(struct variable_table * father_vtable);
  ---------------------------------------------------------------------------*/
 
 /* Get the type of a vde except PTR. */
-int pointer_of_what(struct var_decl_expr * vde);
+int pointer_of_what(const struct var_decl_expr * vde);
 
 /* Compare whether two var_decl_expr are the same. If same, return 1, else 0. */
-int vde_cmp(struct var_decl_expr * e1,struct var_decl_expr * e2);
+int vde_cmp(const struct var_decl_expr * e1, const struct var_decl_expr * e2);
 
 /* Compare whether two var_type are the same. If same, return 1, else 0. */
-int vt_cmp(struct var_type * vt1,struct var_type * vt2);
+int vt_cmp(const struct var_type * vt1, const struct var_type * vt2);
 
 /* Compare whether two var_type_list are the same. If same, return 1, else 0. */
-int vtl_cmp(struct var_type_list * vtl1, struct var_type_list * vtl2);
+int vtl_cmp(const struct var_type_list * vtl1, const struct var_type_list * vtl2);
 
 /* Compare whether two expr_list are the same. If same, return 1, else 0. */
-int el_vtl_cmp(struct expr_list * el, struct var_type_list * vtl);
+int el_vtl_cmp(const struct expr_list * el, const struct var_type_list * vtl);
 
 /* Extract the name of var_decl_expr. */
-char * get_vde_name(struct var_decl_expr * e);
+char * get_vde_name(const struct var_decl_expr * e);
 
 /* Return the first var_type_list of a var_decl_expr. 
    Mostly this is used for extract the type of arguments of a (pointer of) function for type checking. */
-struct var_type_list * get_vde_vtl(struct var_decl_expr * e);
+struct var_type_list * get_vde_vtl(const struct var_decl_expr * e);
 
 /* Set TEMPLATE_TYPENAME to given typename. */
 void set_template_typename(char * typename);
@@ -419,7 +427,7 @@ void vtable_add_list(struct variable_table * vtable, struct var_type_list * vtl)
 
 /* Find the correct item (require function type) in given variable table (mostly global variable table) and modify its cmd body. 
    This is mainly used to update functions in global variable table. */
-void vtable_add_cmd(struct variable_table * vtable, struct var_type * vt, struct cmd * c);
+void vtable_add_cmd_list(struct variable_table * vtable, struct var_type * vt, struct cmd_list * cl);
 
 /* Find the correct item (require function type) in given variable table (mostly global variable table) and modify its templatename. 
    This is mainly used to update polymorphic functions in global variable table. */
@@ -433,6 +441,9 @@ void vtable_del(struct variable_table * vtable, struct var_decl_expr * e);
 
 /* Find the item(pointer of var_type) of given vtable using given var_type. */
 struct vtable_item * vtable_find_vt(struct variable_table * vtable, struct var_type * vt);
+
+/* Find the item(pointer of var_type) of given vtable using given name. */
+struct vtable_item * vtable_find_char(struct variable_table * vtable, char * var_name);
 
 
 /*---------------------------------------------------------------------------
@@ -457,16 +468,16 @@ int polymorphic_expansion_test();
 
 
 /* print given var_type_list as arguments of calling functions. */
-void print_var_type_list_as_argument_types(struct var_type_list * args);
+void print_var_type_list_as_argument_types(const struct var_type_list * args);
 
 /* print given expr_list as arguments of functions. */
-void print_expr_list_as_argument_types(struct expr_list * args);
+void print_expr_list_as_argument_types(const struct expr_list * args);
 
 /* print given var_decl_expr. */
-char * print_vde(struct var_decl_expr * e);
+char * print_vde(const struct var_decl_expr * e);
 
 /* print given var_type. */
-void print_vartype(struct var_type * vt);
+void print_vartype(const struct var_type * vt);
 
 /* print given binary operator. */
 void print_binop(enum BinOpType op);
@@ -475,13 +486,13 @@ void print_binop(enum BinOpType op);
 void print_unop(enum UnOpType op);
 
 /* print given expr. */
-void print_expr(struct expr * e);
+void print_expr(const struct expr * e);
 
 /* print given cmd. */
-void print_cmd(struct cmd * c);
+void print_cmd(const struct cmd * c);
 
 /* print given cmd_list. */
-void print_cmd_list(struct cmd_list * cl);
+void print_cmd_list(const struct cmd_list * cl);
 
 void set_template_output(int output_template);
 
@@ -490,9 +501,9 @@ void set_template_output(int output_template);
  ---------------------------------------------------------------------------*/
 
 /* build nature number. */
-unsigned int build_nat(char * c, int len);
+unsigned int build_nat(const char * c, int len);
 
 /* allocate a new string. */
-char * new_str(char * str, int len);
+char * new_str(const char * str, int len);
 
 #endif // LANG_H_INCLUDED

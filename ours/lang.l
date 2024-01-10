@@ -82,8 +82,8 @@
     if(strcmp(yytext,get_template_typename())==0){
         return TM_TEMPLATE_TYPENAME;
     }
-    yylval.i = new_str(yytext, yyleng);
-    struct var_type * res = vtable_find_char(get_now_vtable(),yytext)->vt;
+    yylval.s = new_str(yytext, yyleng);
+    struct vtable_item * res = vtable_find_char(get_now_vtable(),yytext);
     // printf("B%sB",yytext);
     // printf("C%sC\n",res->typename);
     if(res == NULL){    

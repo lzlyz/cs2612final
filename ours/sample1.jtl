@@ -13,12 +13,13 @@ func void g(){
 }
 
 template <typename T> func T f(T a){
-    g();
-    return a;
+    return f<T>(a);
 }
 
-T g()
-->f<T*>
+N g()
+->f<N*>
 
 T f()
 ->g<T>
+
+B h

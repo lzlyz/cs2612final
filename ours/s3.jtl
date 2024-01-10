@@ -1,0 +1,11 @@
+template <typename T> func T f(){
+    var T a;
+    a=f<T>();
+    a=*(f<T*>());
+};
+
+
+func int main(){
+    var int a;
+    a=f<int>();
+};

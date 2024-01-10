@@ -57,35 +57,32 @@
      TM_WHILE = 273,
      TM_DO = 274,
      TM_FOR = 275,
-     TM_LOCAL = 276,
-     TM_IN = 277,
-     TM_CONTINUE = 278,
-     TM_BREAK = 279,
-     TM_RETURN = 280,
-     TM_SKIP = 281,
-     TM_ASGNOP = 282,
-     TM_OR = 283,
-     TM_AND = 284,
-     TM_NOT = 285,
-     TM_LT = 286,
-     TM_LE = 287,
-     TM_GT = 288,
-     TM_GE = 289,
-     TM_EQ = 290,
-     TM_NE = 291,
-     TM_PLUS = 292,
-     TM_MINUS = 293,
-     TM_MUL = 294,
-     TM_DIV = 295,
-     TM_MOD = 296,
-     TM_UMINUS = 297,
-     TM_DEREF = 298,
-     TM_ADDROF = 299,
-     TM_TYPENAME = 300,
-     TM_TEMPLATE = 301,
-     TM_TYPE_NAME = 302,
-     TM_VAR_NAME = 303,
-     TM_PROC_NAME = 304
+     TM_CONTINUE = 276,
+     TM_BREAK = 277,
+     TM_RETURN = 278,
+     TM_SKIP = 279,
+     TM_ASGNOP = 280,
+     TM_OR = 281,
+     TM_AND = 282,
+     TM_NOT = 283,
+     TM_LT = 284,
+     TM_LE = 285,
+     TM_GT = 286,
+     TM_GE = 287,
+     TM_EQ = 288,
+     TM_NE = 289,
+     TM_PLUS = 290,
+     TM_MINUS = 291,
+     TM_MUL = 292,
+     TM_DIV = 293,
+     TM_MOD = 294,
+     TM_UMINUS = 295,
+     TM_DEREF = 296,
+     TM_ADDROF = 297,
+     TM_TYPENAME = 298,
+     TM_TEMPLATE = 299,
+     TM_TEMPLATE_TYPENAME = 300,
+     TM_VAR_NAME = 301
    };
 #endif
 
@@ -99,19 +96,21 @@ typedef union YYSTYPE
 #line 11 "lang.y"
 
 unsigned int n;
-char * i;
+char * s;
 struct expr * e;
 struct cmd * c;
+struct cmd_list * cl;
 struct var_type_list * vtl;
-struct expr_type_list * etl;
+struct expr_list * el;
 struct var_decl_expr * vde;
 struct var_type * vt;
+enum TypenameType tt;
 void * none;
 
 
 
 /* Line 1676 of yacc.c  */
-#line 115 "parser.h"
+#line 114 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
