@@ -284,6 +284,18 @@ struct expr * TBinOp(enum BinOpType op, struct expr * left, struct expr * right)
     putchar('\n');
     exit(0);
   }
+  if(do_type_check)
+  if(left->vt->left_type==T_TYPENAME_TEMPLATE){
+    printf("[Info][Type check] Variable typename can not be TEMPLATE in");
+    print_binop(op);
+    printf("(");
+    print_expr(left);
+    printf(",");
+    print_expr(right);
+    printf(")");
+    putchar('\n');
+    exit(0);
+  }
   res -> vt = left -> vt;
   return res;
 }
