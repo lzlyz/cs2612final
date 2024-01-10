@@ -346,7 +346,11 @@ struct expr * TAddrOf(struct expr * arg) {
   struct expr * res = new_expr_ptr();
   res -> t = T_ADDROF;
   res -> d.ADDROF.arg = arg;
-  res -> vt = TVarType(arg->vt->left_type,TPtrType(arg -> vt->vde));
+    struct var_decl_expr * res2 = new_var_decl_expr_ptr();
+    res2 -> t = T_PTR_TYPE;
+    res2 -> d.PTR_TYPE.base = arg -> vt->vde;
+  res -> vt = TVarType(arg->vt->left_type,res2);
+
   return res;
 }
 
