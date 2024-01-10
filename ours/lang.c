@@ -952,6 +952,13 @@ struct vtable_item * vtable_find_char(struct variable_table * vtable, char * var
   else return res;
 }
 
+/* Find the item(pointer of var_type) of given vtable using given name and only now_vtable. */
+struct vtable_item * vtable_find_char_now(struct variable_table * vtable, char * var_name){
+  if(vtable==NULL) return NULL;
+  struct vtable_item * res = dictionary_get(vtable->dict, var_name,NULL);
+  return res;
+}
+
 /*---------------------------------------------------------------------------
                     Polymorphic expansion private functions
  ---------------------------------------------------------------------------*/

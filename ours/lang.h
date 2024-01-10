@@ -459,6 +459,9 @@ struct vtable_item * vtable_find_vt(struct variable_table * vtable, struct var_t
 /* Find the item(pointer of var_type) of given vtable using given name. */
 struct vtable_item * vtable_find_char(struct variable_table * vtable, char * var_name);
 
+/* Find the item(pointer of var_type) of given vtable using given name and only now_vtable. */
+struct vtable_item * vtable_find_char_now(struct variable_table * vtable, char * var_name);
+
 
 /*---------------------------------------------------------------------------
                   Polymorphic expansion function prototypes
