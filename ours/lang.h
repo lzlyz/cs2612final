@@ -374,6 +374,12 @@ struct variable_table * TNewVtable(struct variable_table * father_vtable);
 /* Test given vt whether it's a FUNC_TYPE. Used in function/ process declaraing */
 void function_type_test_in_decl(struct var_type * vt);
 
+/* Test given vt whether it can be declared */
+void func_decl_test(struct var_type * func);
+
+/* Test given vt whether it can be declared */
+void proc_decl_test(struct var_type * func);
+
 /* Set the template typename with given var_type function */
 void set_function_template_typename(struct var_type * func, char * typename);
 

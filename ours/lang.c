@@ -450,29 +450,6 @@ struct cmd * TDecl(struct var_type * vt) {
 
 /* Allocate a pointer of cmd of FUNCDECL with given parameters. */
 struct cmd * TFuncDecl(struct var_type * vt){
-  struct vtable_item * vi = vtable_find_vt(get_global_vtable(),vt); //global
-  if(do_type_check){
-    if(vi!=NULL){
-      if(vi->vt->vde->t!=T_FUNC_TYPE){
-        printf("[Error][Type check] Function redeclaring in");
-        print_vartype(vt);
-        putchar('\n');
-        exit(0);
-      }
-      if(vi->vt->vde->d.FUNC_TYPE.body!=NULL){
-        printf("[Error][Type check] (Since we do not support function overloading) Function redeclaring in");
-        print_vartype(vt);
-        putchar('\n');
-        exit(0);
-      }
-      if(vt_cmp(vi->vt,vt)){
-        printf("[Error][Type check] Newly Function redeclaring does not match its previously declared prototype in delcaring");
-        print_vartype(vt);
-        putchar('\n');
-        exit(0);
-      }
-    }
-  }
   struct cmd * res = new_cmd_ptr();
   res -> t = T_FUNCPROTODECL;
   res -> d.FUNCPROTODECL.vt = vt;
@@ -481,29 +458,6 @@ struct cmd * TFuncDecl(struct var_type * vt){
 
 /* Allocate a pointer of cmd of PROCDECL with given parameters. */
 struct cmd * TProcDecl(struct var_type * vt){
-  struct vtable_item * vi = vtable_find_vt(get_global_vtable(),vt); //global
-  if(do_type_check){
-    if(vi!=NULL){
-      if(vi->vt->vde->t!=T_FUNC_TYPE){
-        printf("[Error][Type check] Process redeclaring in");
-        print_vartype(vt);
-        putchar('\n');
-        exit(0);
-      }
-      if(vi->vt->vde->d.FUNC_TYPE.body!=NULL){
-        printf("[Error][Type check] (Since we do not support function overloading) Process redeclaring in");
-        print_vartype(vt);
-        putchar('\n');
-        exit(0);
-      }
-      if(vt_cmp(vi->vt,vt)){
-        printf("[Error][Type check] Newly Process redeclaring does not match its previously declared prototype in delcaring");
-        print_vartype(vt);
-        putchar('\n');
-        exit(0);
-      }
-    }
-  }
   struct cmd * res = new_cmd_ptr();
   res -> t = T_PROCDECL;
   res -> d.PROCDECL.vt = vt;
@@ -725,6 +679,60 @@ void function_type_test_in_decl(struct var_type * vt){
     printf("[Error][Type check] you are not declaring a function/process(mostly function, process will report Syntax Error). Given var_type is:\n");
     print_vartype(vt);
     exit(0);
+  }
+}
+
+/* Test given vt whether it can be declared */
+void func_decl_test(struct var_type * func){
+  struct vtable_item * vi = vtable_find_vt(get_global_vtable(),func); //global
+  if(do_type_check){
+    if(vi!=NULL){
+      if(vi->vt->vde->t!=T_FUNC_TYPE){
+        printf("[Error][Type check] Function redeclaring in");
+        print_vartype(func);
+        putchar('\n');
+        exit(0);
+      }
+      if(vi->vt->vde->d.FUNC_TYPE.body!=NULL){
+        printf("[Error][Type check] (Since we do not support function overloading) Function redeclaring in");
+        print_vartype(func);
+        putchar('\n');
+        exit(0);
+      }
+      if(vt_cmp(vi->vt,func)){
+        printf("[Error][Type check] Newly Function redeclaring does not match its previously declared prototype in delcaring");
+        print_vartype(func);
+        putchar('\n');
+        exit(0);
+      }
+    }
+  }
+}
+
+/* Test given vt whether it can be declared */
+void proc_decl_test(struct var_type * func){
+  struct vtable_item * vi = vtable_find_vt(get_global_vtable(),func); //global
+  if(do_type_check){
+    if(vi!=NULL){
+      if(vi->vt->vde->t!=T_FUNC_TYPE){
+        printf("[Error][Type check] Process redeclaring in");
+        print_vartype(func);
+        putchar('\n');
+        exit(0);
+      }
+      if(vi->vt->vde->d.FUNC_TYPE.body!=NULL){
+        printf("[Error][Type check] (Since we do not support function overloading) Process redeclaring in");
+        print_vartype(func);
+        putchar('\n');
+        exit(0);
+      }
+      if(vt_cmp(vi->vt,func)){
+        printf("[Error][Type check] Newly Process redeclaring does not match its previously declared prototype in delcaring");
+        print_vartype(func);
+        putchar('\n');
+        exit(0);
+      }
+    }
   }
 }
 

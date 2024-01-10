@@ -461,6 +461,7 @@ NT_FUNC_HEAD:
   TM_FUNC NT_NAMED_HEAD
   {
     function_type_test_in_decl($2);
+    func_decl_test($2);
 
     $$ = $2;
     vtable_add(get_global_vtable(), $2);
@@ -492,6 +493,7 @@ NT_TEMPLATE_FUNC_HEAD:
 NT_PROC_HEAD:
   TM_FUNC TM_VOID TM_IDENT TM_LEFT_PAREN NT_COMPLEX_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {
+    proc_decl_test($2);
     $$ = TVarType(T_TYPENAME_VOID, TFuncType(TIntType($3), $5));
     vtable_add(get_global_vtable(), $$);
 
