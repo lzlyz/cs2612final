@@ -205,9 +205,11 @@ struct expr_list {
 struct cmd {
   enum CmdType t;
   union {
-    struct {struct var_type * vt; } DECL;
+    struct {struct var_type * vt;} DECL;
     struct {struct var_type * vt;} FUNCDECL;
     struct {struct var_type * vt;} PROCDECL;
+    struct {struct var_type * vt;} FUNCPROTODECL;
+    struct {struct var_type * vt;} PROCPROTODECL;
     struct {struct expr * left; struct expr * right; } ASGN;
     struct {struct expr * cond; struct cmd_list * left; struct cmd_list * right; } IF;
     struct {struct expr * cond; struct cmd_list * body; } WHILEDO;
@@ -368,6 +370,12 @@ struct variable_table * TNewVtable(struct variable_table * father_vtable);
 /*---------------------------------------------------------------------------
                         Type check function prototypes
  ---------------------------------------------------------------------------*/
+
+/* Test given vt whether it's a FUNC_TYPE. Used in function/ process declaraing */
+void function_type_test_in_decl(struct var_type * vt);
+
+/* Set the template typename with given var_type function */
+void set_function_template_typename(struct var_type * func, char * typename);
 
 /* Get the type of a vde except PTR. */
 int pointer_of_what(const struct var_decl_expr * vde);

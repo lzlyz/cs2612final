@@ -349,7 +349,7 @@ struct expr * TInstance(struct expr * func, struct var_type * vt){
   }
   if(do_type_check)
   if(func -> vt -> vde->d.FUNC_TYPE.templatename== NULL){
-    printf("[Error][Type check] Given function is not a template function when Induction(");
+    printf("[Error][Type check] Given function is not a polymorphic function when Instance(");
     print_expr(func);
     printf(",");
     print_vartype(vt);
@@ -415,29 +415,117 @@ struct expr * TFunc(struct expr * func, struct expr_list * args) {
 
 /* Allocate a pointer of cmd of DECL with given parameters. */
 struct cmd * TDecl(struct var_type * vt) {
-  struct cmd * res = new_cmd_ptr();
-  res -> t = T_DECL;
+  struct vtable_item * vi = vtable_find_vt(get_now_vtable(),vt); //now
+  if(do_type_check)
+  if(vi!=NULL){
+    printf("[Error][Type check] Variable redeclaring in ");
+    print_vartype(vt);
+    putchar('\n');
+    exit(0);
+  }
   if(do_type_check)
   if(vt->vde->t==T_FUNC_TYPE){
     printf("[Error][Type check] in Variable or Pointer Declaration, not declare a Pointer or Variable.");
+    print_vartype(vt);
+    putchar('\n');
     exit(0);
   }
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_DECL;
   res -> d.DECL.vt = vt;
   return res;
 }
 
 /* Allocate a pointer of cmd of FUNCDECL with given parameters. */
 struct cmd * TFuncDecl(struct var_type * vt){
+  struct vtable_item * vi = vtable_find_vt(get_global_vtable(),vt); //global
+  if(do_type_check){
+    if(vi!=NULL){
+      if(vi->vt->vde->t!=T_FUNC_TYPE){
+        printf("[Error][Type check] Function redeclaring in");
+        print_vartype(vt);
+        putchar('\n');
+        exit(0);
+      }
+      if(vi->vt->vde->d.FUNC_TYPE.body!=NULL){
+        printf("[Error][Type check] (Since we do not support function overloading) Function redeclaring in");
+        print_vartype(vt);
+        putchar('\n');
+        exit(0);
+      }
+      if(vt_cmp(vi->vt,vt)){
+        printf("[Error][Type check] Newly Function redeclaring does not match its previously declared prototype in delcaring");
+        print_vartype(vt);
+        putchar('\n');
+        exit(0);
+      }
+    }
+  }
   struct cmd * res = new_cmd_ptr();
-  res -> t = T_FUNCDECL;
-  res -> d.FUNCDECL.vt = vt;
+  res -> t = T_FUNCPROTODECL;
+  res -> d.FUNCPROTODECL.vt = vt;
   return res;
 }
 
 /* Allocate a pointer of cmd of PROCDECL with given parameters. */
 struct cmd * TProcDecl(struct var_type * vt){
+  struct vtable_item * vi = vtable_find_vt(get_global_vtable(),vt); //global
+  if(do_type_check){
+    if(vi!=NULL){
+      if(vi->vt->vde->t!=T_FUNC_TYPE){
+        printf("[Error][Type check] Process redeclaring in");
+        print_vartype(vt);
+        putchar('\n');
+        exit(0);
+      }
+      if(vi->vt->vde->d.FUNC_TYPE.body!=NULL){
+        printf("[Error][Type check] (Since we do not support function overloading) Process redeclaring in");
+        print_vartype(vt);
+        putchar('\n');
+        exit(0);
+      }
+      if(vt_cmp(vi->vt,vt)){
+        printf("[Error][Type check] Newly Process redeclaring does not match its previously declared prototype in delcaring");
+        print_vartype(vt);
+        putchar('\n');
+        exit(0);
+      }
+    }
+  }
   struct cmd * res = new_cmd_ptr();
   res -> t = T_PROCDECL;
+  res -> d.PROCDECL.vt = vt;
+  return res;
+}
+
+/* Allocate a pointer of cmd of FUNCPROTODECL with given parameters. */
+struct cmd * TFuncProtoDecl(struct var_type * vt){
+  struct vtable_item * vi = vtable_find_vt(get_global_vtable(),vt); //global
+  if(vi!=NULL){
+    printf("[Error][Type check] Function ProtoType redeclaring in ");
+    print_vartype(vt);
+    putchar('\n');
+    exit(0);
+  }
+  vtable_add(get_global_vtable(), vt); 
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_FUNCPROTODECL;
+  res -> d.FUNCDECL.vt = vt;
+  return res;
+}
+
+/* Allocate a pointer of cmd of PROCPROTODECL with given parameters. */
+struct cmd * TProcProtoDecl(struct var_type * vt){
+  struct vtable_item * vi = vtable_find_vt(get_global_vtable(),vt); //global
+  if(vi!=NULL){
+    printf("[Error][Type check] Process ProtoType redeclaring in ");
+    print_vartype(vt);
+    putchar('\n');
+    exit(0);
+  }
+  vtable_add(get_global_vtable(), vt); 
+  struct cmd * res = new_cmd_ptr();
+  res -> t = T_PROCPROTODECL;
   res -> d.PROCDECL.vt = vt;
   return res;
 }
@@ -578,11 +666,6 @@ struct var_type * TVarType(enum TypenameType left_type, struct var_decl_expr * v
 
 /* Assume given vt is funtion_type. Allocate a pointer of var_type with the return type of given vt. */
 struct var_type * TFuncReturnType(struct var_type * vt){
-  if(do_type_check)
-  if(vt->vde->t!=T_FUNC_TYPE){
-    printf("[Error][Type check] in TFuncReturnType, given var_type is not a function type. Mostly this error is caused by you are declaring a function but given var_decl_expr is not a function.");
-    exit(0);
-  }
   return TVarType(vt -> left_type, vt -> vde -> d.FUNC_TYPE.ret);
 }
 
@@ -621,6 +704,27 @@ struct variable_table * now_vtable;
 /*---------------------------------------------------------------------------
                             Type check function codes
  ---------------------------------------------------------------------------*/
+
+
+/* Test given vt whether it's a FUNC_TYPE. Used in function/ process declaraing */
+void function_type_test_in_decl(struct var_type * vt){
+  if(do_type_check)
+  if(vt->vde->t!=T_FUNC_TYPE){
+    printf("[Error][Type check] you are not declaring a function/process(mostly function, process will report Syntax Error). Given var_type is:\n");
+    print_vartype(vt);
+    exit(0);
+  }
+}
+
+/* Test given vt whether it's a FUNC_TYPE. Used in function/ process declaraing */
+void set_function_template_typename(struct var_type * func, char * typename){
+  if(func->vde->t!=T_FUNC_TYPE){
+    printf("[Error][Type check] Error in set_function_template_typename, given var_type is not a function:\n");
+    print_vartype(func);
+    exit(0);
+  }
+  func->vde->d.FUNC_TYPE.templatename=typename;
+}
 
 /* Get the type of a vde except PTR. */
 int pointer_of_what(const struct var_decl_expr * vde){
@@ -779,13 +883,13 @@ void vtable_add_template(struct variable_table * vtable, struct var_type * vt, c
   struct vtable_item * res = vtable_find_vt(vtable, vt);
   if(do_type_check)
   if(res==NULL){
-    printf("[Error][Type check] not find the item to add cmd, vartype:");
+    printf("[Error][Type check] not find the item to add template typename, vartype:");
     print_vartype(vt);
     exit(0);
   }
   if(do_type_check)
   if(res->vt->vde->t!=T_FUNC_TYPE){
-    printf("[Error][Type check] the item to add cmd is not the function type, vartype:");
+    printf("[Error][Type check] the item to add template typename is not the function type, vartype:");
     print_vartype(vt);
     exit(0);
   }

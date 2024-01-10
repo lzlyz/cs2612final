@@ -1,8 +1,9 @@
-template <typename T> func T f(){
+template <typename T> func T f(T c){
     skip;
 };
 
 func int main(){
     var int a;
     a=1;
+    a = (f<int *>)(a);
 };

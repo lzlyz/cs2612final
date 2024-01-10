@@ -20,7 +20,7 @@ int main(int argc, char * * argv) {
     printf("[Error][main.c] File %s can't be opened.\n", argv[1]);
     return 0;
   }
-  printf("[Info][main.c] Let's do yyparser! This is the grammar tree with polymorphic functions.\n");
+  printf("[Info][main.c] Let's do yyparser!\n");
   // Firstly initialize variable table!
   init_global_vtable();
   // Do yyparse!

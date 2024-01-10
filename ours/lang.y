@@ -123,44 +123,40 @@ NT_GLOBAL_CMD:
   }
 | NT_FUNC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
-    vtable_add_cmd_list(get_global_vtable(), $1, $3);
     $$ = (TFuncDecl($1));
+    vtable_add_cmd_list(get_global_vtable(), $1, $3);
     set_function_returntype(NULL);
     clear_now_vtable();
   }
 | NT_TEMPLATE_FUNC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
-    vtable_add_cmd_list(get_global_vtable(), $1, $3);
     $$ = (TFuncDecl($1));
+    vtable_add_cmd_list(get_global_vtable(), $1, $3);
     set_template_typename("");
     set_function_returntype(NULL);
     clear_now_vtable();
   }
 | NT_PROC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
-    vtable_add_cmd_list(get_global_vtable(), $1, $3);
     $$ = (TProcDecl($1));
+    vtable_add_cmd_list(get_global_vtable(), $1, $3);
     clear_now_vtable();
   }
-| NT_FUNC_HEAD
+| TM_FUNC NT_NAMED_HEAD
   {
-    $$ = (TFuncDecl($1));
-    set_function_returntype(NULL);
-    clear_now_vtable();
+    $$ = TFuncProtoDecl($2);
   }
-| NT_TEMPLATE_FUNC_HEAD 
+| NT_TEMPLATE_HEAD TM_FUNC NT_NAMED_HEAD
   {
-    $$ = (TFuncDecl($1));
+    set_function_template_typename($3,$1);
+    $$ = TFuncProtoDecl($3);
     set_template_typename("");
-    set_function_returntype(NULL);
-    clear_now_vtable();
   }
-| NT_PROC_HEAD
+| TM_FUNC TM_VOID TM_IDENT TM_LEFT_PAREN NT_COMPLEX_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {
-    vtable_add_cmd_list(get_global_vtable(), $1, $3);
-    $$ = (TProcDecl($1));
-    clear_now_vtable();
+    $$ = TProcProtoDecl(TVarType(T_TYPENAME_VOID, TFuncType(TIntType($3), $5)));
   }
+
 /* | NT_TEMPLATE_PROC_HEAD TM_LEFT_BRACE NT_LOCAL_CMD_LIST TM_RIGHT_BRACE
   {
     
@@ -459,11 +455,13 @@ NT_TYPE_NAME:
   {
     $$ = T_TYPENAME_TEMPLATE;
   }
+;
 
 NT_FUNC_HEAD:
   TM_FUNC NT_NAMED_HEAD
   {
-    
+    function_type_test_in_decl($2);
+
     $$ = $2;
     vtable_add(get_global_vtable(), $2);
 
@@ -486,7 +484,7 @@ NT_TEMPLATE_HEAD:
 NT_TEMPLATE_FUNC_HEAD:
   NT_TEMPLATE_HEAD NT_FUNC_HEAD
   {
-    vtable_add_template(get_global_vtable(), $2, $1);
+    set_function_template_typename($2,$1);
     $$ = $2;
   }
 ;
@@ -495,7 +493,7 @@ NT_PROC_HEAD:
   TM_FUNC TM_VOID TM_IDENT TM_LEFT_PAREN NT_COMPLEX_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {
     $$ = TVarType(T_TYPENAME_VOID, TFuncType(TIntType($3), $5));
-    vtable_add(get_now_vtable(), $$);
+    vtable_add(get_global_vtable(), $$);
 
     init_new_now_vtable();
     vtable_add_list(get_now_vtable(),$5);
