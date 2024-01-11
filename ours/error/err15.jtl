@@ -1,0 +1,8 @@
+template <typename T> func T f(T a){
+    return a;
+};
+
+func int main(){
+    var int b;
+    b= f<int> (2);
+};

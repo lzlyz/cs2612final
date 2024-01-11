@@ -23,6 +23,7 @@ int main(int argc, char * * argv) {
   printf("[Info][main.c] Let's do yyparser!\n");
   // Firstly initialize variable table!
   init_global_vtable();
+  set_template_typename("");
   // Do yyparse!
   int yyparse_result = yyparse();
   switch(yyparse_result){
