@@ -212,6 +212,8 @@ struct var_decl_expr * TFuncType(struct var_decl_expr * e, struct var_type_list 
   switch(e->t){
   case T_INT_TYPE:
     res -> t = T_FUNC_TYPE;
+    res -> d.FUNC_TYPE.body = NULL;
+    res -> d.FUNC_TYPE.templatename = NULL;
     res -> d.FUNC_TYPE.name = e -> d.INT_TYPE.name;
     res -> d.FUNC_TYPE.args = args;
     res -> d.FUNC_TYPE.ret = TIntType("");
