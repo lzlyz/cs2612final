@@ -150,7 +150,8 @@ NT_GLOBAL_CMD:
 | NT_TEMPLATE_HEAD TM_FUNC NT_NAMED_HEAD
   {
     function_type_test_in_decl($3);
-    set_function_template_typename($3,$1);
+    vtable_add_template(get_global_vtable(),$2,$1);
+    // set_function_template_typename($3,$1);
     $$ = TFuncProtoDecl($3);
     set_template_typename("");
   }
@@ -487,7 +488,8 @@ NT_TEMPLATE_HEAD:
 NT_TEMPLATE_FUNC_HEAD:
   NT_TEMPLATE_HEAD NT_FUNC_HEAD
   {
-    set_function_template_typename($2,$1);
+    vtable_add_template(get_global_vtable(),$2,$1);
+    // set_function_template_typename($2,$1);
     $$ = $2;
   }
 ;

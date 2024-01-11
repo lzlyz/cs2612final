@@ -674,7 +674,7 @@ struct variable_table * TNewVtable(struct variable_table * father_vtable){
  ---------------------------------------------------------------------------*/
 
 /* TEMPLATE_TYPENAME is used to record the template typename when checking the declaration of polymorphic functions. */
-char * TEMPLATE_TYPENAME="";
+char * TEMPLATE_TYPENAME = "";
 
 /* function_returntype is used to record the return type of the functino when checking cmd "return". */
 struct var_type * function_returntype;
