@@ -440,7 +440,7 @@ struct expr * TFunc(struct expr * func, struct expr_list * args) {
 
 /* Allocate a pointer of cmd of DECL with given parameters. */
 struct cmd * TDecl(struct var_type * vt) {
-  struct vtable_item * vi = vtable_find_vt(get_now_vtable(),vt); //now
+  struct vtable_item * vi = vtable_find_char_now(get_now_vtable(),get_vde_name(vt->vde)); //now
   if(do_type_check)
   if(vi!=NULL){
     printf("[Error][Type check] Variable redeclaring in ");
@@ -674,7 +674,7 @@ struct variable_table * TNewVtable(struct variable_table * father_vtable){
  ---------------------------------------------------------------------------*/
 
 /* TEMPLATE_TYPENAME is used to record the template typename when checking the declaration of polymorphic functions. */
-char * TEMPLATE_TYPENAME = "";
+char * TEMPLATE_TYPENAME = NULL;
 
 /* function_returntype is used to record the return type of the functino when checking cmd "return". */
 struct var_type * function_returntype;
@@ -965,6 +965,7 @@ struct vtable_item * vtable_find_char_now(struct variable_table * vtable, char *
   struct vtable_item * res = dictionary_get(vtable->dict, var_name,NULL);
   return res;
 }
+
 
 /*---------------------------------------------------------------------------
                     Polymorphic expansion private functions

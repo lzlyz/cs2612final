@@ -79,7 +79,7 @@
 [_A-Za-z][_A-Za-z0-9]* {
     // printf("A%dA",get_now_vtable()==NULL);
     // printf("%s %s %d\n",yytext,get_template_typename(),strcmp(yytext,get_template_typename()));
-    if(strcmp(yytext,get_template_typename())==0){
+    if(get_template_typename()!=NULL&&strcmp(yytext,get_template_typename())==0){
         return TM_TEMPLATE_TYPENAME;
     }
     yylval.s = new_str(yytext, yyleng);

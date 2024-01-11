@@ -132,7 +132,7 @@ NT_GLOBAL_CMD:
   {
     $$ = (TFuncDecl($1));
     vtable_add_cmd_list(get_global_vtable(), $1, $3);
-    set_template_typename("");
+    set_template_typename(NULL);
     set_function_returntype(NULL);
     clear_now_vtable();
   }
@@ -153,7 +153,7 @@ NT_GLOBAL_CMD:
     vtable_add_template(get_global_vtable(),$2,$1);
     // set_function_template_typename($3,$1);
     $$ = TFuncProtoDecl($3);
-    set_template_typename("");
+    set_template_typename(NULL);
   }
 | TM_FUNC TM_VOID TM_IDENT TM_LEFT_PAREN NT_COMPLEX_ARGUMENT_TYPE_LIST TM_RIGHT_PAREN
   {

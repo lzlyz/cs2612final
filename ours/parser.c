@@ -1643,7 +1643,7 @@ yyreduce:
     {
     (yyval.c) = (TFuncDecl((yyvsp[(1) - (4)].vt)));
     vtable_add_cmd_list(get_global_vtable(), (yyvsp[(1) - (4)].vt), (yyvsp[(3) - (4)].cl));
-    set_template_typename("");
+    set_template_typename(NULL);
     set_function_returntype(NULL);
     clear_now_vtable();
   ;}
@@ -1679,7 +1679,7 @@ yyreduce:
     vtable_add_template(get_global_vtable(),(yyvsp[(2) - (3)].none),(yyvsp[(1) - (3)].s));
     // set_function_template_typename($3,$1);
     (yyval.c) = TFuncProtoDecl((yyvsp[(3) - (3)].vt));
-    set_template_typename("");
+    set_template_typename(NULL);
   ;}
     break;
 
