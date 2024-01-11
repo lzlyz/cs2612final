@@ -1,7 +1,0 @@
-template <typename T> func T f(T a){
-    skip;
-};
-func int main(){
-    var int c;
-    c = f<int> (0);
-};

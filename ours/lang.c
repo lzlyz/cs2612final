@@ -1729,6 +1729,9 @@ void print_vartype(const struct var_type * vt){
     case T_TYPENAME_INT:
       printf("int\n");
       break;
+    case T_TYPENAME_VOID:
+      printf("void\n");
+      break;
     case T_TYPENAME_TEMPLATE:
       printf("template typename\n");
       break;
