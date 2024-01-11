@@ -1,0 +1,14 @@
+template <typename T> func T f(T c ){
+    skip;
+};
+
+func int  gg1(int a );
+func int main(){
+    var int* g;
+    g= f<int* >( g);
+};
+
+
+
+
+

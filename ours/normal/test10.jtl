@@ -1,0 +1,44 @@
+template <typename T> func T a(T t);
+template <typename T> func T b(T t);
+template <typename T> func T c(T t)
+{
+    var T x;
+    var T y;
+    var T z;
+    x = a<T> (y);
+    x = b<T> (y);
+    x = c<T> (y);
+
+
+};
+
+
+template <typename T> func T b(T t)
+{
+    var T x;
+    var T y;
+    var T z;
+    x = a<T> (y);
+    x = b<T> (y);
+    x = c<T> (y);
+
+};
+
+template <typename T> func T a(T t)
+{
+    var T x;
+    var T y;
+    var T z;
+    x = a<T> (y);
+    x = b<T> (y);
+    x = c<T> (y);
+
+};
+
+
+func int main()
+{
+    var int* tt;
+    tt= a<int*> (tt);
+    
+};

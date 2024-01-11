@@ -1,0 +1,11 @@
+var int b;
+func int f( int a ,int b);
+func int f(int a ,int b)
+{
+    return a+b;
+};
+
+func int main()
+{
+    skip;
+};

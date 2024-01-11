@@ -1,0 +1,9 @@
+func int main()
+{
+    var int* t;
+    var int b;
+    var int **t2;
+    &t= &(&(b));
+    t2=&t;
+    
+};

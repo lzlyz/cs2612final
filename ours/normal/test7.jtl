@@ -1,0 +1,16 @@
+var int a ;
+template <typename T> func T g(T c)
+{
+    var int b;
+    var T b1;
+};
+
+
+func int main()
+{
+    var int* t;
+    t= g<int*> (t);
+    var int t1;
+    t1= g<int> (t1);
+    
+};

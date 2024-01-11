@@ -1,0 +1,6 @@
+var int a ;
+template <typename T> func T f(T c)
+{
+    var T c;
+    c= f<T> (c);
+};
