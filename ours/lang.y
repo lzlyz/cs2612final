@@ -150,8 +150,7 @@ NT_GLOBAL_CMD:
 | NT_TEMPLATE_HEAD TM_FUNC NT_NAMED_HEAD
   {
     function_type_test_in_decl($3);
-    vtable_add_template(get_global_vtable(),$2,$1);
-    // set_function_template_typename($3,$1);
+    set_function_template_typename($3,$1);
     $$ = TFuncProtoDecl($3);
     set_template_typename(NULL);
   }
@@ -467,7 +466,7 @@ NT_FUNC_HEAD:
     func_decl_test($2);
 
     $$ = $2;
-    vtable_add(get_now_vtable(), $2); // global_vtable
+    vtable_add(get_global_vtable(), $2); // global_vtable
 
     set_function_returntype(TFuncReturnType($2));
 
@@ -489,8 +488,8 @@ NT_TEMPLATE_HEAD:
 NT_TEMPLATE_FUNC_HEAD:
   NT_TEMPLATE_HEAD NT_FUNC_HEAD
   {
-    vtable_add_template(get_global_vtable(),$2,$1);
-    // set_function_template_typename($2,$1);
+    // vtable_add_template(get_global_vtable(),$2,$1);
+    set_function_template_typename($2,$1);
     $$ = $2;
   }
 ;
@@ -500,7 +499,7 @@ NT_PROC_HEAD:
   {
     $$ = TVarType(T_TYPENAME_VOID, TFuncType(TIntType($3), $5));
     proc_decl_test($$);
-    vtable_add(get_now_vtable(), $$);
+    vtable_add(get_global_vtable(), $$);
 
     init_new_now_vtable();
     vtable_add(get_now_vtable(), $$);

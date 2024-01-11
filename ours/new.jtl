@@ -1,3 +1,4 @@
+template <typename T> func T G(T a);
 template <typename T> func T f(T a){
     skip;
 };

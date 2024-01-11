@@ -515,14 +515,14 @@ static const yytype_int8 yyrhs[] =
 static const yytype_uint16 yyrline[] =
 {
        0,   100,   100,   108,   112,   119,   124,   131,   139,   145,
-     150,   158,   178,   182,   190,   195,   203,   207,   212,   217,
-     222,   227,   231,   235,   239,   243,   247,   251,   259,   263,
-     267,   274,   278,   286,   290,   294,   298,   302,   306,   310,
-     314,   318,   322,   326,   330,   334,   338,   342,   346,   350,
-     354,   358,   362,   369,   373,   377,   381,   385,   392,   396,
-     400,   404,   411,   415,   419,   423,   427,   431,   435,   442,
-     446,   453,   457,   464,   481,   490,   499,   512,   519,   526,
-     533,   540,   547,   551
+     150,   157,   177,   181,   189,   194,   202,   206,   211,   216,
+     221,   226,   230,   234,   238,   242,   246,   250,   258,   262,
+     266,   273,   277,   285,   289,   293,   297,   301,   305,   309,
+     313,   317,   321,   325,   329,   333,   337,   341,   345,   349,
+     353,   357,   361,   368,   372,   376,   380,   384,   391,   395,
+     399,   403,   410,   414,   418,   422,   426,   430,   434,   441,
+     445,   452,   456,   463,   480,   489,   498,   511,   518,   525,
+     532,   539,   546,   550
 };
 #endif
 
@@ -1676,8 +1676,7 @@ yyreduce:
 #line 151 "lang.y"
     {
     function_type_test_in_decl((yyvsp[(3) - (3)].vt));
-    vtable_add_template(get_global_vtable(),(yyvsp[(2) - (3)].none),(yyvsp[(1) - (3)].s));
-    // set_function_template_typename($3,$1);
+    set_function_template_typename((yyvsp[(3) - (3)].vt),(yyvsp[(1) - (3)].s));
     (yyval.c) = TFuncProtoDecl((yyvsp[(3) - (3)].vt));
     set_template_typename(NULL);
   ;}
@@ -1686,7 +1685,7 @@ yyreduce:
   case 11:
 
 /* Line 1455 of yacc.c  */
-#line 159 "lang.y"
+#line 158 "lang.y"
     {
     (yyval.c) = TProcProtoDecl(TVarType(T_TYPENAME_VOID, TFuncType(TIntType((yyvsp[(3) - (6)].s)), (yyvsp[(5) - (6)].vtl))));
   ;}
@@ -1695,7 +1694,7 @@ yyreduce:
   case 12:
 
 /* Line 1455 of yacc.c  */
-#line 179 "lang.y"
+#line 178 "lang.y"
     {
     (yyval.cl) = TCLCons((yyvsp[(1) - (3)].c), (yyvsp[(3) - (3)].cl));
   ;}
@@ -1704,7 +1703,7 @@ yyreduce:
   case 13:
 
 /* Line 1455 of yacc.c  */
-#line 183 "lang.y"
+#line 182 "lang.y"
     {
     (yyval.cl) = TCLCons((yyvsp[(1) - (2)].c), TCLNil());
   ;}
@@ -1713,7 +1712,7 @@ yyreduce:
   case 14:
 
 /* Line 1455 of yacc.c  */
-#line 191 "lang.y"
+#line 190 "lang.y"
     {
     (yyval.c) = (TDecl((yyvsp[(2) - (2)].vt)));
     vtable_add(get_now_vtable(), (yyvsp[(2) - (2)].vt));
@@ -1723,7 +1722,7 @@ yyreduce:
   case 15:
 
 /* Line 1455 of yacc.c  */
-#line 196 "lang.y"
+#line 195 "lang.y"
     {
     (yyval.c) = (yyvsp[(1) - (1)].c)
   ;}
@@ -1732,7 +1731,7 @@ yyreduce:
   case 16:
 
 /* Line 1455 of yacc.c  */
-#line 204 "lang.y"
+#line 203 "lang.y"
     {
     (yyval.c) = (TAsgn((yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -1741,7 +1740,7 @@ yyreduce:
   case 17:
 
 /* Line 1455 of yacc.c  */
-#line 208 "lang.y"
+#line 207 "lang.y"
     {
     (yyval.c) = (TIf((yyvsp[(3) - (12)].e),(yyvsp[(7) - (12)].cl),(yyvsp[(11) - (12)].cl)));
     clear_now_vtable();
@@ -1751,7 +1750,7 @@ yyreduce:
   case 18:
 
 /* Line 1455 of yacc.c  */
-#line 213 "lang.y"
+#line 212 "lang.y"
     {
     (yyval.c) = (TWhileDo((yyvsp[(3) - (8)].e),(yyvsp[(7) - (8)].cl)));
     clear_now_vtable();
@@ -1761,7 +1760,7 @@ yyreduce:
   case 19:
 
 /* Line 1455 of yacc.c  */
-#line 218 "lang.y"
+#line 217 "lang.y"
     {
     (yyval.c) = (TDoWhile((yyvsp[(3) - (8)].cl),(yyvsp[(7) - (8)].e)));
     clear_now_vtable();
@@ -1771,7 +1770,7 @@ yyreduce:
   case 20:
 
 /* Line 1455 of yacc.c  */
-#line 223 "lang.y"
+#line 222 "lang.y"
     {
     (yyval.c) = (TFor((yyvsp[(3) - (11)].c),(yyvsp[(5) - (11)].e),(yyvsp[(7) - (11)].c),(yyvsp[(10) - (11)].cl)));
     clear_now_vtable();
@@ -1781,7 +1780,7 @@ yyreduce:
   case 21:
 
 /* Line 1455 of yacc.c  */
-#line 228 "lang.y"
+#line 227 "lang.y"
     {
     (yyval.c) = (TContinue());
   ;}
@@ -1790,7 +1789,7 @@ yyreduce:
   case 22:
 
 /* Line 1455 of yacc.c  */
-#line 232 "lang.y"
+#line 231 "lang.y"
     {
     (yyval.c) = (TSkip());
   ;}
@@ -1799,7 +1798,7 @@ yyreduce:
   case 23:
 
 /* Line 1455 of yacc.c  */
-#line 236 "lang.y"
+#line 235 "lang.y"
     {
     (yyval.c) = (TBreak());
   ;}
@@ -1808,7 +1807,7 @@ yyreduce:
   case 24:
 
 /* Line 1455 of yacc.c  */
-#line 240 "lang.y"
+#line 239 "lang.y"
     {
     (yyval.c) = (TReturn(NULL));
   ;}
@@ -1817,7 +1816,7 @@ yyreduce:
   case 25:
 
 /* Line 1455 of yacc.c  */
-#line 244 "lang.y"
+#line 243 "lang.y"
     {
     (yyval.c) = (TReturn((yyvsp[(2) - (2)].e)));
   ;}
@@ -1826,7 +1825,7 @@ yyreduce:
   case 26:
 
 /* Line 1455 of yacc.c  */
-#line 248 "lang.y"
+#line 247 "lang.y"
     {
     (yyval.c) = (TProc((yyvsp[(1) - (3)].e),TELNil()));
   ;}
@@ -1835,7 +1834,7 @@ yyreduce:
   case 27:
 
 /* Line 1455 of yacc.c  */
-#line 252 "lang.y"
+#line 251 "lang.y"
     {
     (yyval.c) = (TProc((yyvsp[(1) - (4)].e),(yyvsp[(3) - (4)].el)));
   ;}
@@ -1844,7 +1843,7 @@ yyreduce:
   case 28:
 
 /* Line 1455 of yacc.c  */
-#line 260 "lang.y"
+#line 259 "lang.y"
     {
     (yyval.e) = (TConst((yyvsp[(1) - (1)].n)));
   ;}
@@ -1853,7 +1852,7 @@ yyreduce:
   case 29:
 
 /* Line 1455 of yacc.c  */
-#line 264 "lang.y"
+#line 263 "lang.y"
     {
     (yyval.e) = ((yyvsp[(2) - (3)].e));
   ;}
@@ -1862,7 +1861,7 @@ yyreduce:
   case 30:
 
 /* Line 1455 of yacc.c  */
-#line 268 "lang.y"
+#line 267 "lang.y"
     {
     (yyval.e) = (TVar((yyvsp[(1) - (1)].s)));
   ;}
@@ -1871,7 +1870,7 @@ yyreduce:
   case 31:
 
 /* Line 1455 of yacc.c  */
-#line 275 "lang.y"
+#line 274 "lang.y"
     {
     (yyval.e) = (TUnOp(T_NOT,(yyvsp[(2) - (2)].e)));
   ;}
@@ -1880,7 +1879,7 @@ yyreduce:
   case 32:
 
 /* Line 1455 of yacc.c  */
-#line 279 "lang.y"
+#line 278 "lang.y"
     {
     (yyval.e) = ((yyvsp[(1) - (1)].e));
   ;}
@@ -1889,7 +1888,7 @@ yyreduce:
   case 33:
 
 /* Line 1455 of yacc.c  */
-#line 287 "lang.y"
+#line 286 "lang.y"
     {
     (yyval.e) = ((yyvsp[(1) - (1)].e));
   ;}
@@ -1898,7 +1897,7 @@ yyreduce:
   case 34:
 
 /* Line 1455 of yacc.c  */
-#line 291 "lang.y"
+#line 290 "lang.y"
     {
     (yyval.e) = (TUnOp(T_UMINUS,(yyvsp[(2) - (2)].e)));
   ;}
@@ -1907,7 +1906,7 @@ yyreduce:
   case 35:
 
 /* Line 1455 of yacc.c  */
-#line 295 "lang.y"
+#line 294 "lang.y"
     {
     (yyval.e) = (TDeref((yyvsp[(2) - (2)].e)));
   ;}
@@ -1916,7 +1915,7 @@ yyreduce:
   case 36:
 
 /* Line 1455 of yacc.c  */
-#line 299 "lang.y"
+#line 298 "lang.y"
     {
     (yyval.e) = (TAddrOf((yyvsp[(2) - (2)].e)));
   ;}
@@ -1925,7 +1924,7 @@ yyreduce:
   case 37:
 
 /* Line 1455 of yacc.c  */
-#line 303 "lang.y"
+#line 302 "lang.y"
     {
     (yyval.e) = (TFunc((yyvsp[(1) - (3)].e),TELNil()));
   ;}
@@ -1934,7 +1933,7 @@ yyreduce:
   case 38:
 
 /* Line 1455 of yacc.c  */
-#line 307 "lang.y"
+#line 306 "lang.y"
     {
     (yyval.e) = (TFunc((yyvsp[(1) - (4)].e),(yyvsp[(3) - (4)].el)));
   ;}
@@ -1943,7 +1942,7 @@ yyreduce:
   case 39:
 
 /* Line 1455 of yacc.c  */
-#line 311 "lang.y"
+#line 310 "lang.y"
     {
     (yyval.e) = (TInstance((yyvsp[(1) - (4)].e),(yyvsp[(3) - (4)].vt)));
   ;}
@@ -1952,7 +1951,7 @@ yyreduce:
   case 40:
 
 /* Line 1455 of yacc.c  */
-#line 315 "lang.y"
+#line 314 "lang.y"
     {
     (yyval.e) = (TBinOp(T_MUL,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -1961,7 +1960,7 @@ yyreduce:
   case 41:
 
 /* Line 1455 of yacc.c  */
-#line 319 "lang.y"
+#line 318 "lang.y"
     {
     (yyval.e) = (TBinOp(T_PLUS,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -1970,7 +1969,7 @@ yyreduce:
   case 42:
 
 /* Line 1455 of yacc.c  */
-#line 323 "lang.y"
+#line 322 "lang.y"
     {
     (yyval.e) = (TBinOp(T_MINUS,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -1979,7 +1978,7 @@ yyreduce:
   case 43:
 
 /* Line 1455 of yacc.c  */
-#line 327 "lang.y"
+#line 326 "lang.y"
     {
     (yyval.e) = (TBinOp(T_DIV,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -1988,7 +1987,7 @@ yyreduce:
   case 44:
 
 /* Line 1455 of yacc.c  */
-#line 331 "lang.y"
+#line 330 "lang.y"
     {
     (yyval.e) = (TBinOp(T_MOD,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -1997,7 +1996,7 @@ yyreduce:
   case 45:
 
 /* Line 1455 of yacc.c  */
-#line 335 "lang.y"
+#line 334 "lang.y"
     {
     (yyval.e) = (TBinOp(T_LT,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -2006,7 +2005,7 @@ yyreduce:
   case 46:
 
 /* Line 1455 of yacc.c  */
-#line 339 "lang.y"
+#line 338 "lang.y"
     {
     (yyval.e) = (TBinOp(T_GT,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -2015,7 +2014,7 @@ yyreduce:
   case 47:
 
 /* Line 1455 of yacc.c  */
-#line 343 "lang.y"
+#line 342 "lang.y"
     {
     (yyval.e) = (TBinOp(T_LE,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -2024,7 +2023,7 @@ yyreduce:
   case 48:
 
 /* Line 1455 of yacc.c  */
-#line 347 "lang.y"
+#line 346 "lang.y"
     {
     (yyval.e) = (TBinOp(T_GE,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -2033,7 +2032,7 @@ yyreduce:
   case 49:
 
 /* Line 1455 of yacc.c  */
-#line 351 "lang.y"
+#line 350 "lang.y"
     {
     (yyval.e) = (TBinOp(T_EQ,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -2042,7 +2041,7 @@ yyreduce:
   case 50:
 
 /* Line 1455 of yacc.c  */
-#line 355 "lang.y"
+#line 354 "lang.y"
     {
     (yyval.e) = (TBinOp(T_NE,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -2051,7 +2050,7 @@ yyreduce:
   case 51:
 
 /* Line 1455 of yacc.c  */
-#line 359 "lang.y"
+#line 358 "lang.y"
     {
     (yyval.e) = (TBinOp(T_AND,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -2060,7 +2059,7 @@ yyreduce:
   case 52:
 
 /* Line 1455 of yacc.c  */
-#line 363 "lang.y"
+#line 362 "lang.y"
     {
     (yyval.e) = (TBinOp(T_OR,(yyvsp[(1) - (3)].e),(yyvsp[(3) - (3)].e)));
   ;}
@@ -2069,7 +2068,7 @@ yyreduce:
   case 53:
 
 /* Line 1455 of yacc.c  */
-#line 370 "lang.y"
+#line 369 "lang.y"
     {
 	(yyval.vde) = TIntType((yyvsp[(1) - (1)].s));
   ;}
@@ -2078,7 +2077,7 @@ yyreduce:
   case 54:
 
 /* Line 1455 of yacc.c  */
-#line 374 "lang.y"
+#line 373 "lang.y"
     {
 	(yyval.vde) = TPtrType((yyvsp[(2) - (2)].vde));
   ;}
@@ -2087,7 +2086,7 @@ yyreduce:
   case 55:
 
 /* Line 1455 of yacc.c  */
-#line 378 "lang.y"
+#line 377 "lang.y"
     {
   (yyval.vde) = TFuncType((yyvsp[(1) - (4)].vde), (yyvsp[(3) - (4)].vtl));
   ;}
@@ -2096,7 +2095,7 @@ yyreduce:
   case 56:
 
 /* Line 1455 of yacc.c  */
-#line 382 "lang.y"
+#line 381 "lang.y"
     {
 	(yyval.vde) = TFuncType((yyvsp[(1) - (3)].vde),TVTLNil());
   ;}
@@ -2105,7 +2104,7 @@ yyreduce:
   case 57:
 
 /* Line 1455 of yacc.c  */
-#line 386 "lang.y"
+#line 385 "lang.y"
     {
 	(yyval.vde) = ((yyvsp[(2) - (3)].vde));
   ;}
@@ -2114,7 +2113,7 @@ yyreduce:
   case 58:
 
 /* Line 1455 of yacc.c  */
-#line 393 "lang.y"
+#line 392 "lang.y"
     {
 	  (yyval.vtl) = TVTLCons((yyvsp[(1) - (3)].vt), (yyvsp[(3) - (3)].vtl)); 
   ;}
@@ -2123,7 +2122,7 @@ yyreduce:
   case 59:
 
 /* Line 1455 of yacc.c  */
-#line 397 "lang.y"
+#line 396 "lang.y"
     {
 	  (yyval.vtl) = TVTLCons((yyvsp[(1) - (1)].vt), TVTLNil()) ; 
   ;}
@@ -2132,7 +2131,7 @@ yyreduce:
   case 60:
 
 /* Line 1455 of yacc.c  */
-#line 401 "lang.y"
+#line 400 "lang.y"
     {
 	  (yyval.vtl) = TVTLCons((yyvsp[(1) - (3)].vt), (yyvsp[(3) - (3)].vtl)); 
   ;}
@@ -2141,7 +2140,7 @@ yyreduce:
   case 61:
 
 /* Line 1455 of yacc.c  */
-#line 405 "lang.y"
+#line 404 "lang.y"
     {
 	  (yyval.vtl) = TVTLCons((yyvsp[(1) - (1)].vt), TVTLNil()) ; 
   ;}
@@ -2150,7 +2149,7 @@ yyreduce:
   case 62:
 
 /* Line 1455 of yacc.c  */
-#line 412 "lang.y"
+#line 411 "lang.y"
     {
     (yyval.vde)= TPtrType(TIntType(""));
   ;}
@@ -2159,7 +2158,7 @@ yyreduce:
   case 63:
 
 /* Line 1455 of yacc.c  */
-#line 416 "lang.y"
+#line 415 "lang.y"
     {
     (yyval.vde)= TFuncType(TIntType(""), TVTLNil());
   ;}
@@ -2168,7 +2167,7 @@ yyreduce:
   case 64:
 
 /* Line 1455 of yacc.c  */
-#line 420 "lang.y"
+#line 419 "lang.y"
     {
     (yyval.vde)= TPtrType((yyvsp[(2) - (2)].vde));
   ;}
@@ -2177,7 +2176,7 @@ yyreduce:
   case 65:
 
 /* Line 1455 of yacc.c  */
-#line 424 "lang.y"
+#line 423 "lang.y"
     {
     (yyval.vde) = TFuncType((yyvsp[(1) - (3)].vde) , TVTLNil());
   ;}
@@ -2186,7 +2185,7 @@ yyreduce:
   case 66:
 
 /* Line 1455 of yacc.c  */
-#line 428 "lang.y"
+#line 427 "lang.y"
     {
     (yyval.vde) = TFuncType((yyvsp[(1) - (4)].vde) ,(yyvsp[(3) - (4)].vtl));
   ;}
@@ -2195,7 +2194,7 @@ yyreduce:
   case 67:
 
 /* Line 1455 of yacc.c  */
-#line 432 "lang.y"
+#line 431 "lang.y"
     {
     (yyval.vde)=((yyvsp[(2) - (3)].vde));
   ;}
@@ -2204,7 +2203,7 @@ yyreduce:
   case 68:
 
 /* Line 1455 of yacc.c  */
-#line 436 "lang.y"
+#line 435 "lang.y"
     {
     (yyval.vde)= TFuncType(TIntType(""), (yyvsp[(2) - (3)].vtl));
   ;}
@@ -2213,7 +2212,7 @@ yyreduce:
   case 69:
 
 /* Line 1455 of yacc.c  */
-#line 443 "lang.y"
+#line 442 "lang.y"
     {
 	  (yyval.el) = TELCons((yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].el)); 
   ;}
@@ -2222,7 +2221,7 @@ yyreduce:
   case 70:
 
 /* Line 1455 of yacc.c  */
-#line 447 "lang.y"
+#line 446 "lang.y"
     {
 	  (yyval.el) = TELCons((yyvsp[(1) - (1)].e), TELNil()) ; 
   ;}
@@ -2231,7 +2230,7 @@ yyreduce:
   case 71:
 
 /* Line 1455 of yacc.c  */
-#line 454 "lang.y"
+#line 453 "lang.y"
     {
     (yyval.tt) = T_TYPENAME_INT;
   ;}
@@ -2240,7 +2239,7 @@ yyreduce:
   case 72:
 
 /* Line 1455 of yacc.c  */
-#line 458 "lang.y"
+#line 457 "lang.y"
     {
     (yyval.tt) = T_TYPENAME_TEMPLATE;
   ;}
@@ -2249,13 +2248,13 @@ yyreduce:
   case 73:
 
 /* Line 1455 of yacc.c  */
-#line 465 "lang.y"
+#line 464 "lang.y"
     {
     function_type_test_in_decl((yyvsp[(2) - (2)].vt));
     func_decl_test((yyvsp[(2) - (2)].vt));
 
     (yyval.vt) = (yyvsp[(2) - (2)].vt);
-    vtable_add(get_now_vtable(), (yyvsp[(2) - (2)].vt)); // global_vtable
+    vtable_add(get_global_vtable(), (yyvsp[(2) - (2)].vt)); // global_vtable
 
     set_function_returntype(TFuncReturnType((yyvsp[(2) - (2)].vt)));
 
@@ -2268,7 +2267,7 @@ yyreduce:
   case 74:
 
 /* Line 1455 of yacc.c  */
-#line 482 "lang.y"
+#line 481 "lang.y"
     {
     set_template_typename((yyvsp[(4) - (5)].s));
     (yyval.s) = (yyvsp[(4) - (5)].s);
@@ -2278,10 +2277,10 @@ yyreduce:
   case 75:
 
 /* Line 1455 of yacc.c  */
-#line 491 "lang.y"
+#line 490 "lang.y"
     {
-    vtable_add_template(get_global_vtable(),(yyvsp[(2) - (2)].vt),(yyvsp[(1) - (2)].s));
-    // set_function_template_typename($2,$1);
+    // vtable_add_template(get_global_vtable(),$2,$1);
+    set_function_template_typename((yyvsp[(2) - (2)].vt),(yyvsp[(1) - (2)].s));
     (yyval.vt) = (yyvsp[(2) - (2)].vt);
   ;}
     break;
@@ -2289,11 +2288,11 @@ yyreduce:
   case 76:
 
 /* Line 1455 of yacc.c  */
-#line 500 "lang.y"
+#line 499 "lang.y"
     {
     (yyval.vt) = TVarType(T_TYPENAME_VOID, TFuncType(TIntType((yyvsp[(3) - (6)].s)), (yyvsp[(5) - (6)].vtl)));
     proc_decl_test((yyval.vt));
-    vtable_add(get_now_vtable(), (yyval.vt));
+    vtable_add(get_global_vtable(), (yyval.vt));
 
     init_new_now_vtable();
     vtable_add(get_now_vtable(), (yyval.vt));
@@ -2304,7 +2303,7 @@ yyreduce:
   case 77:
 
 /* Line 1455 of yacc.c  */
-#line 513 "lang.y"
+#line 512 "lang.y"
     {
     init_new_now_vtable();
   ;}
@@ -2313,7 +2312,7 @@ yyreduce:
   case 78:
 
 /* Line 1455 of yacc.c  */
-#line 520 "lang.y"
+#line 519 "lang.y"
     {
     init_new_now_vtable();
   ;}
@@ -2322,7 +2321,7 @@ yyreduce:
   case 79:
 
 /* Line 1455 of yacc.c  */
-#line 527 "lang.y"
+#line 526 "lang.y"
     {
     init_new_now_vtable();
   ;}
@@ -2331,7 +2330,7 @@ yyreduce:
   case 80:
 
 /* Line 1455 of yacc.c  */
-#line 534 "lang.y"
+#line 533 "lang.y"
     {
     init_new_now_vtable();
   ;}
@@ -2340,7 +2339,7 @@ yyreduce:
   case 81:
 
 /* Line 1455 of yacc.c  */
-#line 541 "lang.y"
+#line 540 "lang.y"
     {
     (yyval.vt) = TVarType((yyvsp[(1) - (2)].tt),(yyvsp[(2) - (2)].vde));
   ;}
@@ -2349,7 +2348,7 @@ yyreduce:
   case 82:
 
 /* Line 1455 of yacc.c  */
-#line 548 "lang.y"
+#line 547 "lang.y"
     {
     (yyval.vt) = TVarType((yyvsp[(1) - (2)].tt),(yyvsp[(2) - (2)].vde));
   ;}
@@ -2358,7 +2357,7 @@ yyreduce:
   case 83:
 
 /* Line 1455 of yacc.c  */
-#line 552 "lang.y"
+#line 551 "lang.y"
     {
     (yyval.vt) = TVarType((yyvsp[(1) - (1)].tt),TIntType(""));
   ;}
@@ -2367,7 +2366,7 @@ yyreduce:
 
 
 /* Line 1455 of yacc.c  */
-#line 2371 "parser.c"
+#line 2370 "parser.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2579,7 +2578,7 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 557 "lang.y"
+#line 556 "lang.y"
 
 
 /* ----------------------------------

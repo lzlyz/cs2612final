@@ -1074,6 +1074,13 @@ void ped_unfold_function_declare(struct cmd_list * root){
         cl->next=TCLCons(TFuncDecl(ifl->insf->expanded_function),cl->next);
       }
     }
+    else if (cl->c->t==T_FUNCPROTODECL&&cl->c->d.FUNCPROTODECL.vt->vde->d.FUNC_TYPE.templatename!=NULL){
+      struct instance_function_list * ifl;
+      for(ifl=dictionary_get(polymorphic_expansion_dict, cl->c->d.FUNCDECL.vt->vde->d.FUNC_TYPE.name, NULL);
+          ifl!=NULL;ifl=ifl->next){
+        cl->next=TCLCons(TFuncProtoDecl(ifl->insf->expanded_function),cl->next);
+      }
+    }
   }
 }
 
@@ -1333,13 +1340,12 @@ const int POLYMORPHIC_MAX_COPIES=9999, POLYMORPHIC_MAX_COPIES_STELEN=4; //POLYMO
 char * alloc_new_function_name(const char * polymorphic_function_name){
   int i;
   char * new_name;
+  new_name = new_str(polymorphic_function_name,strlen(polymorphic_function_name)+POLYMORPHIC_MAX_COPIES_STELEN);
   for(i=1;i<=POLYMORPHIC_MAX_COPIES;i++){
-    new_name = new_str(polymorphic_function_name,strlen(polymorphic_function_name)+POLYMORPHIC_MAX_COPIES_STELEN);
     sprintf(new_name,"%s%d",new_name,i);
     if(!vtable_find_char(get_global_vtable(),new_name)){
       break;
     }
-    free(new_name);
   }
   if(i>POLYMORPHIC_MAX_COPIES){
     printf("[Error][Polymorphic expansion] Now we do not support expand copies over %d. ", POLYMORPHIC_MAX_COPIES);
@@ -1476,8 +1482,10 @@ int FT_expr(struct expr * e){
       FT_expr_expand(e);
       return 1;
     case T_FUNC:
-      if(!FT_expr(e->d.FUNC.func)&&!vtable_find_vt(get_global_vtable(),e->vt)->visited) 
-        FT_visit_function(e->vt);
+      if(!FT_expr(e->d.FUNC.func)){
+        struct vtable_item * vi = vtable_find_vt(get_global_vtable(),e->vt);
+        if(vi!=NULL&&!vi->visited) FT_visit_function(vi->vt);
+      }
       FT_expr_list(e->d.FUNC.args);
       return 0;
     default:
@@ -1628,6 +1636,7 @@ int polymorphic_expansion_test(struct cmd_list * root){
 
 /* indent is used for record the spaces that need to be printed. */
 int indent = 0;
+int hide_command_body = 0;
 
 /* print spaces depending on indent. */
 void print_spaces() {
@@ -1688,7 +1697,7 @@ char * print_vde(const struct var_decl_expr * e) {
     indent ++;
     if(e->d.FUNC_TYPE.templatename){
       print_spaces();
-      printf("Template name: %s\n",e->d.FUNC_TYPE.templatename);
+      printf("Template Typename: %s\n",e->d.FUNC_TYPE.templatename);
     }
     print_spaces();
     printf("Arguments:\n");
@@ -1696,9 +1705,9 @@ char * print_vde(const struct var_decl_expr * e) {
     print_var_type_list_as_argument_types(e -> d.FUNC_TYPE.args);
     indent --;
     print_spaces();
-    printf("Return type: ");
+    printf("Return Type: ");
     print_vde(e->d.FUNC_TYPE.ret);
-    if(e->d.FUNC_TYPE.body){
+    if(e->d.FUNC_TYPE.body&&!hide_command_body){
       print_spaces();
       printf("Function Body: \n");
       indent ++;
@@ -1719,7 +1728,7 @@ void print_vartype(const struct var_type * vt){
       printf("int\n");
       break;
     case T_TYPENAME_TEMPLATE:
-      printf("%s\n",vt->vde->d.FUNC_TYPE.templatename);
+      printf("template typename\n");
       break;
   }
   print_spaces();
@@ -1875,13 +1884,17 @@ void print_cmd(const struct cmd * c) {
     if(!do_output_template&&c->d.FUNCPROTODECL.vt->vde->d.FUNC_TYPE.templatename!=NULL) break;
     pprintf("Function Prototype Declare:\n");
     indent ++;
+    hide_command_body=1;
     print_vartype(c->d.FUNCPROTODECL.vt);
     indent --;
+    hide_command_body=0;
     break;
   case T_PROCPROTODECL:
     pprintf("Process Prototype Declare:\n");
     indent ++;
+    hide_command_body=1;
     print_vartype(c->d.PROCPROTODECL.vt);
+    hide_command_body=0;
     indent --;
     break;
   case T_ASGN:
