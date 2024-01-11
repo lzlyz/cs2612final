@@ -482,6 +482,7 @@ struct cmd * TProcDecl(struct var_type * vt){
 /* Allocate a pointer of cmd of FUNCPROTODECL with given parameters. */
 struct cmd * TFuncProtoDecl(struct var_type * vt){
   struct vtable_item * vi = vtable_find_vt(get_global_vtable(),vt); //global
+  if(do_type_check)
   if(vi!=NULL){
     printf("[Error][Type check] Function ProtoType redeclaring in ");
     print_vartype(vt);
@@ -498,6 +499,7 @@ struct cmd * TFuncProtoDecl(struct var_type * vt){
 /* Allocate a pointer of cmd of PROCPROTODECL with given parameters. */
 struct cmd * TProcProtoDecl(struct var_type * vt){
   struct vtable_item * vi = vtable_find_vt(get_global_vtable(),vt); //global
+  if(do_type_check)
   if(vi!=NULL){
     printf("[Error][Type check] Process ProtoType redeclaring in ");
     print_vartype(vt);
@@ -1608,16 +1610,16 @@ struct var_type_list * template_expand_vtl(struct var_type * expand, struct var_
 int polymorphic_expansion_test(struct cmd_list * root){
   struct vtable_item * main_vtable_item=vtable_find_char(get_global_vtable(),"main");
   if(main_vtable_item==NULL){
-    printf("[Warning][Polymorphic expansion test] No \"main\" Function!\n");
+    printf("[Warning][Polymorphic expansion] No \"main\" Function!\n");
     return 1;
   }
   if(main_vtable_item->vt->vde->t!=T_FUNC_TYPE){
-    printf("[Warning][Polymorphic expansion test] \"main\" is not a function!\n");
-    return 1;
+    printf("[Error][Polymorphic expansion] \"main\" is not a function!\n");
+    exit(0);
   }
   if(main_vtable_item->vt->vde->d.FUNC_TYPE.templatename!=NULL){
-    printf("[Warning][Polymorphic expansion test] \"main\" should not be a polymorphic function!\n");
-    return 1;
+    printf("[Error][Polymorphic expansion] \"main\" should not be a polymorphic function!\n");
+    exit(0);
   }
   // Close type check
   close_type_check();
