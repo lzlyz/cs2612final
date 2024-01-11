@@ -718,7 +718,7 @@ void func_decl_test(struct var_type * func){
         putchar('\n');
         exit(0);
       }
-      if(vt_cmp(vi->vt,func)){
+      if(!vt_cmp(vi->vt,func)){
         printf("[Error][Type check] Newly Function redeclaring does not match its previously declared prototype in delcaring");
         print_vartype(func);
         putchar('\n');
@@ -745,7 +745,7 @@ void proc_decl_test(struct var_type * func){
         putchar('\n');
         exit(0);
       }
-      if(vt_cmp(vi->vt,func)){
+      if(!vt_cmp(vi->vt,func)){
         printf("[Error][Type check] Newly Process redeclaring does not match its previously declared prototype in delcaring");
         print_vartype(func);
         putchar('\n');
