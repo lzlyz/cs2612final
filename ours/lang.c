@@ -1274,12 +1274,7 @@ void PT_expr(struct visited_list * visl, enum template_typename_type instance_ty
       PT_expr(visl, instance_type, e->d.ADDROF.arg);
       break;
     case T_INSTANCE:
-      struct vtable_item * vi = vtable_find_vt(get_global_vtable(),e->d.INSTANCE.func->vt);
-      if(vi==NULL){
-        printf("[Error][Polymorphic Expansion] vtable founds wild pointer in PT_expr");
-        exit(0);
-      }
-      PT_next_call(visl, instance_type, e->d.INSTANCE.func->vt, vi->vt);
+      PT_next_call(visl, instance_type, vtable_find_vt(get_global_vtable(),e->d.INSTANCE.func->vt)->vt, e->d.INSTANCE.vt);
       break;
     case T_FUNC:
       PT_expr(visl, instance_type, e->d.FUNC.func);
@@ -1349,7 +1344,7 @@ char * alloc_new_function_name(const char * polymorphic_function_name){
   char * new_name;
   new_name = new_str(polymorphic_function_name,strlen(polymorphic_function_name)+POLYMORPHIC_MAX_COPIES_STELEN);
   for(i=1;i<=POLYMORPHIC_MAX_COPIES;i++){
-    sprintf(new_name,"%s%d",new_name,i);
+    sprintf(new_name,"%s%d",polymorphic_function_name,i);
     if(!vtable_find_char(get_global_vtable(),new_name)){
       break;
     }
@@ -1378,12 +1373,7 @@ struct expr * PFE_expr(struct var_type * instance_type, struct expr * e){
     case T_ADDROF:
       return TAddrOf(PFE_expr(instance_type, e->d.ADDROF.arg));
     case T_INSTANCE:
-      struct vtable_item * vi = vtable_find_vt(get_global_vtable(),e->d.INSTANCE.func->vt);
-      if(vi==NULL){
-        printf("[Error][Polymorphic Expansion] vtable founds wild pointer in PFE_expr");
-        exit(0);
-      }
-      return TVar(PFE(e->d.INSTANCE.func->vt,template_expand_vt(instance_type, vi->vt))->vde->d.FUNC_TYPE.name);
+      return TVar(PFE(vtable_find_vt(get_global_vtable(),e->d.INSTANCE.func->vt)->vt,template_expand_vt(instance_type, e->d.INSTANCE.vt))->vde->d.FUNC_TYPE.name);
     case T_FUNC:
       return TFunc(PFE_expr(instance_type, e->d.FUNC.func),PFE_expr_list(instance_type, e->d.FUNC.args));
     default:
@@ -1462,12 +1452,7 @@ void FT_polymorphic_test(struct var_type * polymorphic_function){
 
 /* change given instance expr. */
 void FT_expr_expand(struct expr * e){
-  struct vtable_item * vi = vtable_find_vt(get_global_vtable(),e->d.INSTANCE.func->vt);
-  if(vi==NULL){
-    printf("[Error][Polymorphic Expansion] vtable founds wild pointer in FT_expr_expand");
-    exit(0);
-  }
-  struct var_type * instance_function = PFE(e->d.INSTANCE.func->vt, vi->vt);
+  struct var_type * instance_function = PFE(vtable_find_vt(get_global_vtable(),e->d.INSTANCE.func->vt)->vt, e->d.INSTANCE.vt);
   e->t = T_VAR;
   e->d.VAR.name = instance_function->vde->d.FUNC_TYPE.name;
   e->vt = instance_function;
