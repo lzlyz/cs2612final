@@ -957,169 +957,159 @@ YY_RULE_SETUP
         return TM_TEMPLATE_TYPENAME;
     }
     yylval.s = new_str(yytext, yyleng);
-    struct vtable_item * res = vtable_find_char(get_now_vtable(),yytext);
-    // printf("B%sB",yytext);
-    // printf("C%sC\n",res->typename);
-    
-    /* Find the item(pointer of var_type) of given vtable using given name and only now_vtable. */
-    if(res == NULL){
-        return TM_IDENT;
-    }
-    else{
-        return TM_VAR_NAME;
-    }
+    return TM_IDENT;
 }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 99 "lang.l"
+#line 89 "lang.l"
 {
     return TM_SEMICOL;
     }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 104 "lang.l"
+#line 94 "lang.l"
 {
     return TM_COMMA;
     }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 108 "lang.l"
+#line 98 "lang.l"
 {
     return TM_LEFT_PAREN;
     }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 112 "lang.l"
+#line 102 "lang.l"
 {
     return TM_RIGHT_PAREN;
     }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 116 "lang.l"
+#line 106 "lang.l"
 {
     return TM_LEFT_BRACE;
     }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 120 "lang.l"
+#line 110 "lang.l"
 {
     return TM_RIGHT_BRACE;
     }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 124 "lang.l"
+#line 114 "lang.l"
 {
     return TM_PLUS;
     }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 128 "lang.l"
+#line 118 "lang.l"
 {
     return TM_MINUS;
     }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 132 "lang.l"
+#line 122 "lang.l"
 {
     return TM_MUL;
     }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 136 "lang.l"
+#line 126 "lang.l"
 {
     return TM_DIV;
     }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 140 "lang.l"
+#line 130 "lang.l"
 {
     return TM_MOD;
     }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 144 "lang.l"
+#line 134 "lang.l"
 {
     return TM_LT;
     }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 148 "lang.l"
+#line 138 "lang.l"
 {
     return TM_GT;
     }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 152 "lang.l"
+#line 142 "lang.l"
 {
     return TM_LE;
     }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 156 "lang.l"
+#line 146 "lang.l"
 {
     return TM_GE;
     }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 160 "lang.l"
+#line 150 "lang.l"
 {
     return TM_EQ;
     }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 164 "lang.l"
+#line 154 "lang.l"
 {
     return TM_NE;
     }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 168 "lang.l"
+#line 158 "lang.l"
 {
     return TM_ASGNOP;
     }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 172 "lang.l"
+#line 162 "lang.l"
 {
     return TM_AND;
     }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 176 "lang.l"
+#line 166 "lang.l"
 {
     return TM_OR;
     }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 180 "lang.l"
+#line 170 "lang.l"
 {
     return TM_NOT;
     }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 184 "lang.l"
+#line 174 "lang.l"
 {
     return TM_ADDROF;
     }
@@ -1127,21 +1117,21 @@ YY_RULE_SETUP
 case 41:
 /* rule 41 can match eol */
 YY_RULE_SETUP
-#line 189 "lang.l"
+#line 179 "lang.l"
 { };
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 191 "lang.l"
+#line 181 "lang.l"
 {printf("%s",yytext);
      return -1; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 193 "lang.l"
+#line 183 "lang.l"
 ECHO;
 	YY_BREAK
-#line 1144 "lexer.c"
+#line 1134 "lexer.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2158,6 +2148,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 193 "lang.l"
+#line 183 "lang.l"
 
 

@@ -246,6 +246,11 @@ struct expr * TConst(unsigned int value) {
 
 /* Allocate a pointer of expr of CONST with given parameters. */
 struct expr * TVar(char * name) {
+  struct vtable_item * vi = vtable_find_char(get_now_vtable(),name);
+  if(vi == NULL){
+    printf("[Info][Type check] Variable not declare in Var(%s)",name);
+    exit(0);
+  }
   struct expr * res = new_expr_ptr();
   res -> t = T_VAR;
   res -> d.VAR.name = name;

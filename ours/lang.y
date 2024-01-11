@@ -43,7 +43,7 @@ void * none;
 
 // TM_TYPENAME is keyword "typename", TM_TEMPLATE_TYPENAME is the left type name used in declaration.
 %token <none> TM_TYPENAME 
-%token <none> TM_TEMPLATE TM_TEMPLATE_TYPENAME TM_VAR_NAME
+%token <none> TM_TEMPLATE TM_TEMPLATE_TYPENAME
 
 /* ----------------------------------
               Nonterminals
@@ -263,7 +263,7 @@ NT_EXPR0:
   {
     $$ = ($2);
   }
-| TM_VAR_NAME
+| TM_IDENT
   {
     $$ = (TVar($1));
   }

@@ -81,8 +81,7 @@
      TM_ADDROF = 297,
      TM_TYPENAME = 298,
      TM_TEMPLATE = 299,
-     TM_TEMPLATE_TYPENAME = 300,
-     TM_VAR_NAME = 301
+     TM_TEMPLATE_TYPENAME = 300
    };
 #endif
 
@@ -110,7 +109,7 @@ void * none;
 
 
 /* Line 1676 of yacc.c  */
-#line 114 "parser.h"
+#line 113 "parser.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
