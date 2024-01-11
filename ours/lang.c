@@ -1274,7 +1274,7 @@ void PT_expr(struct visited_list * visl, enum template_typename_type instance_ty
       PT_expr(visl, instance_type, e->d.ADDROF.arg);
       break;
     case T_INSTANCE:
-      PT_next_call(visl, instance_type, e->d.INSTANCE.func->vt, e->d.INSTANCE.vt);
+      PT_next_call(visl, instance_type, e->d.INSTANCE.func->vt, vtable_find_vt(get_global_vtable(),e->d.INSTANCE.vt)->vt);
       break;
     case T_FUNC:
       PT_expr(visl, instance_type, e->d.FUNC.func);
@@ -1373,7 +1373,7 @@ struct expr * PFE_expr(struct var_type * instance_type, struct expr * e){
     case T_ADDROF:
       return TAddrOf(PFE_expr(instance_type, e->d.ADDROF.arg));
     case T_INSTANCE:
-      return TVar(PFE(e->d.INSTANCE.func->vt,template_expand_vt(instance_type, e->d.INSTANCE.vt))->vde->d.FUNC_TYPE.name);
+      return TVar(PFE(e->d.INSTANCE.func->vt,template_expand_vt(instance_type, vtable_find_vt(get_global_vtable(),e->d.INSTANCE.vt)->vt))->vde->d.FUNC_TYPE.name);
     case T_FUNC:
       return TFunc(PFE_expr(instance_type, e->d.FUNC.func),PFE_expr_list(instance_type, e->d.FUNC.args));
     default:
@@ -1452,7 +1452,7 @@ void FT_polymorphic_test(struct var_type * polymorphic_function){
 
 /* change given instance expr. */
 void FT_expr_expand(struct expr * e){
-  struct var_type * instance_function = PFE(e->d.INSTANCE.func->vt, e->d.INSTANCE.vt);
+  struct var_type * instance_function = PFE(e->d.INSTANCE.func->vt, vtable_find_vt(get_global_vtable(),e->d.INSTANCE.vt)->vt);
   e->t = T_VAR;
   e->d.VAR.name = instance_function->vde->d.FUNC_TYPE.name;
   e->vt = instance_function;
