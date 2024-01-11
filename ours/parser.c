@@ -521,8 +521,8 @@ static const yytype_uint16 yyrline[] =
      314,   318,   322,   326,   330,   334,   338,   342,   346,   350,
      354,   358,   362,   369,   373,   377,   381,   385,   392,   396,
      400,   404,   411,   415,   419,   423,   427,   431,   435,   442,
-     446,   453,   457,   464,   480,   489,   498,   509,   516,   523,
-     530,   537,   544,   548
+     446,   453,   457,   464,   481,   490,   499,   512,   519,   526,
+     533,   540,   547,   551
 };
 #endif
 
@@ -2255,11 +2255,12 @@ yyreduce:
     func_decl_test((yyvsp[(2) - (2)].vt));
 
     (yyval.vt) = (yyvsp[(2) - (2)].vt);
-    vtable_add(get_global_vtable(), (yyvsp[(2) - (2)].vt));
+    vtable_add(get_now_vtable(), (yyvsp[(2) - (2)].vt)); // global_vtable
 
     set_function_returntype(TFuncReturnType((yyvsp[(2) - (2)].vt)));
 
     init_new_now_vtable();
+    vtable_add(get_now_vtable(), (yyvsp[(2) - (2)].vt));
     vtable_add_list(get_now_vtable(),get_vde_vtl((yyvsp[(2) - (2)].vt)->vde));
   ;}
     break;
@@ -2267,7 +2268,7 @@ yyreduce:
   case 74:
 
 /* Line 1455 of yacc.c  */
-#line 481 "lang.y"
+#line 482 "lang.y"
     {
     set_template_typename((yyvsp[(4) - (5)].s));
     (yyval.s) = (yyvsp[(4) - (5)].s);
@@ -2277,7 +2278,7 @@ yyreduce:
   case 75:
 
 /* Line 1455 of yacc.c  */
-#line 490 "lang.y"
+#line 491 "lang.y"
     {
     vtable_add_template(get_global_vtable(),(yyvsp[(2) - (2)].vt),(yyvsp[(1) - (2)].s));
     // set_function_template_typename($2,$1);
@@ -2288,12 +2289,14 @@ yyreduce:
   case 76:
 
 /* Line 1455 of yacc.c  */
-#line 499 "lang.y"
+#line 500 "lang.y"
     {
     (yyval.vt) = TVarType(T_TYPENAME_VOID, TFuncType(TIntType((yyvsp[(3) - (6)].s)), (yyvsp[(5) - (6)].vtl)));
     proc_decl_test((yyval.vt));
-    vtable_add(get_global_vtable(), (yyval.vt));
+    vtable_add(get_now_vtable(), (yyval.vt));
+
     init_new_now_vtable();
+    vtable_add(get_now_vtable(), (yyval.vt));
     vtable_add_list(get_now_vtable(),(yyvsp[(5) - (6)].vtl));
   ;}
     break;
@@ -2301,7 +2304,7 @@ yyreduce:
   case 77:
 
 /* Line 1455 of yacc.c  */
-#line 510 "lang.y"
+#line 513 "lang.y"
     {
     init_new_now_vtable();
   ;}
@@ -2310,7 +2313,7 @@ yyreduce:
   case 78:
 
 /* Line 1455 of yacc.c  */
-#line 517 "lang.y"
+#line 520 "lang.y"
     {
     init_new_now_vtable();
   ;}
@@ -2319,7 +2322,7 @@ yyreduce:
   case 79:
 
 /* Line 1455 of yacc.c  */
-#line 524 "lang.y"
+#line 527 "lang.y"
     {
     init_new_now_vtable();
   ;}
@@ -2328,7 +2331,7 @@ yyreduce:
   case 80:
 
 /* Line 1455 of yacc.c  */
-#line 531 "lang.y"
+#line 534 "lang.y"
     {
     init_new_now_vtable();
   ;}
@@ -2337,7 +2340,7 @@ yyreduce:
   case 81:
 
 /* Line 1455 of yacc.c  */
-#line 538 "lang.y"
+#line 541 "lang.y"
     {
     (yyval.vt) = TVarType((yyvsp[(1) - (2)].tt),(yyvsp[(2) - (2)].vde));
   ;}
@@ -2346,7 +2349,7 @@ yyreduce:
   case 82:
 
 /* Line 1455 of yacc.c  */
-#line 545 "lang.y"
+#line 548 "lang.y"
     {
     (yyval.vt) = TVarType((yyvsp[(1) - (2)].tt),(yyvsp[(2) - (2)].vde));
   ;}
@@ -2355,7 +2358,7 @@ yyreduce:
   case 83:
 
 /* Line 1455 of yacc.c  */
-#line 549 "lang.y"
+#line 552 "lang.y"
     {
     (yyval.vt) = TVarType((yyvsp[(1) - (1)].tt),TIntType(""));
   ;}
@@ -2364,7 +2367,7 @@ yyreduce:
 
 
 /* Line 1455 of yacc.c  */
-#line 2368 "parser.c"
+#line 2371 "parser.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2576,7 +2579,7 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 554 "lang.y"
+#line 557 "lang.y"
 
 
 /* ----------------------------------

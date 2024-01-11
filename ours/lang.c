@@ -728,7 +728,7 @@ void func_decl_test(struct var_type * func){
 
 /* Test given vt whether it can be declared */
 void proc_decl_test(struct var_type * func){
-  struct vtable_item * vi = vtable_find_vt(get_global_vtable(),func); //global
+  struct vtable_item * vi = vtable_find_char_now(get_global_vtable(),get_vde_name(func->vde)); //global
   if(do_type_check){
     if(vi!=NULL){
       if(vi->vt->vde->t!=T_FUNC_TYPE){
@@ -835,6 +835,14 @@ struct var_type_list * get_vde_vtl(const struct var_decl_expr * e){
 
 /* Set TEMPLATE_TYPENAME to given typename. */
 void set_template_typename(char * typename){
+  if(typename!=NULL){
+    if(do_type_check){
+      struct vtable_item * vi = vtable_find_char_now(get_now_vtable(),typename);
+      if(vi!=NULL){
+        printf("[Error][Type check] typename redeclaring.");
+      }
+    }
+  }
   TEMPLATE_TYPENAME=typename;
 }
 

@@ -467,11 +467,12 @@ NT_FUNC_HEAD:
     func_decl_test($2);
 
     $$ = $2;
-    vtable_add(get_global_vtable(), $2);
+    vtable_add(get_now_vtable(), $2); // global_vtable
 
     set_function_returntype(TFuncReturnType($2));
 
     init_new_now_vtable();
+    vtable_add(get_now_vtable(), $2);
     vtable_add_list(get_now_vtable(),get_vde_vtl($2->vde));
   }
 ;
@@ -499,8 +500,10 @@ NT_PROC_HEAD:
   {
     $$ = TVarType(T_TYPENAME_VOID, TFuncType(TIntType($3), $5));
     proc_decl_test($$);
-    vtable_add(get_global_vtable(), $$);
+    vtable_add(get_now_vtable(), $$);
+
     init_new_now_vtable();
+    vtable_add(get_now_vtable(), $$);
     vtable_add_list(get_now_vtable(),$5);
   }
 ;
